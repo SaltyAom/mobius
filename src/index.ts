@@ -75,10 +75,7 @@ type MapEnum<T extends string, Carry extends string | null = null> = T extends
     ? Carry | Trim<Name>
     : Carry
 
-type MapSchema<
-    T extends string,
-    Known extends CustomTypes = {}
-> = T extends
+type MapSchema<T extends string, Known extends CustomTypes = {}> = T extends
     | `${infer _}"""${infer _}"""${infer Schema}`
     | `${infer _}#${infer _}\n${infer Schema}`
     ? MapSchema<Schema, Known>
@@ -179,3 +176,116 @@ type MapArgument<
     : Carry
 
 export type Mobius<T extends string> = Prettify<CreateMobius<T>>
+
+type Selective<T> = T extends object
+    ? {
+          [K in keyof T]?: K extends 'where' ? T[K] : Selective<T[K]>
+      }
+    : T
+
+type MaybeArray<T> = T | T[]
+type UnwrapArray<T> = T extends Array<infer R>
+    ? R extends Array<any>
+        ? UnwrapArray<R>
+        : R
+    : T
+
+export type CreateQuery<T extends Record<string, unknown>> = {
+    [K in keyof T]: T[K] extends ((
+        _: infer Params
+    ) => infer Query extends MaybeArray<Record<string, unknown>>)
+        ? {
+              select: CreateQuery<UnwrapArray<Query>>
+              where: Params
+          }
+        : NonNullable<T[K]> extends infer Query extends MaybeArray<
+              Record<string, unknown>
+          >
+        ? {} extends UnwrapArray<Query>
+            ? true | undefined | null
+            : CreateQuery<UnwrapArray<Query>>
+        : true | undefined | null
+}
+
+type UnwrapFunctionalSchema<
+    Schema extends Record<string, unknown> | Function | null
+> = Schema extends ((
+    ...p: any[]
+) => infer Returned extends Record<string, unknown>)
+    ? Returned
+    : Schema extends Record<string, unknown>
+    ? Schema
+    : never
+
+type Resolve<
+    Query extends Record<string, unknown>,
+    Model extends Record<string, unknown>
+> = {
+    [K in keyof Query]: Model extends Record<
+        K,
+        infer Schema extends (Record<string, unknown> | Function) | null
+    >
+        ? Query[K] extends true
+            ? Model[K]
+            : Query[K] extends {
+                  select: infer Selected extends Record<string, unknown>
+              }
+            ?
+                  | Resolve<Selected, UnwrapFunctionalSchema<Schema>>
+                  | (null extends Schema ? null : never)
+            : Query[K] extends Record<string, unknown>
+            ?
+                  | Resolve<Query[K], UnwrapFunctionalSchema<Schema>>
+                  | (null extends Schema ? null : never)
+            : {}
+        : K extends keyof Model
+        ? Model[K] extends Array<any>
+            ? K extends keyof Query
+                ? Resolve<
+                      Query[K] extends Record<string, unknown> ? Query[K] : {},
+                      Model[K][number]
+                  >[]
+                : []
+            : Model[K]
+        : never
+}
+
+export type Query<T extends CustomTypes = {}> = T extends {
+    Query: infer Schema extends CustomTypes
+}
+    ? <
+          Query extends Selective<CreateQuery<Schema>>,
+          Mutate extends Selective<CreateQuery<Schema>>
+      >(params: {
+          query?: Query
+          mutate?: Mutate
+      }) => Promise<Resolve<Query, Schema> & Resolve<Mutate, Schema>>
+    : {}
+
+export class Client<
+    Declaration extends string = '',
+    Schema extends CustomTypes = Mobius<Declaration>,
+    Queries extends Schema extends {
+        Query: infer Queries extends CustomTypes
+    }
+        ? Queries
+        : {} = Schema extends {
+        Query: infer Queries extends CustomTypes
+    }
+        ? Queries
+        : {}
+> {
+    constructor(public url: string) {}
+
+    $<
+        Query extends Selective<CreateQuery<Queries>>,
+        Mutate extends Selective<CreateQuery<Queries>>
+    >(params: {
+        query?: Query
+        mutate?: Mutate
+    }): Promise<Resolve<Query, Queries> & Resolve<Mutate, Queries>> {
+        return this as any
+    }
+}
+
+export default Client

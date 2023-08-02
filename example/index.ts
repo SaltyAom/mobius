@@ -1,4 +1,4 @@
-import type { Mobius } from '../src'
+import { Client } from '../src'
 
 const type = /* GraphQL */ `
     type MultipleNHResponse {
@@ -89,6 +89,13 @@ const type = /* GraphQL */ `
         related(channel: NhqlChannel! = HIFUMIN_FIRST): [Nhentai!]!
     }
 
+    type NhqlUser {
+        id: Int!
+        username: String!
+        slug: String!
+        avatar: String!
+    }
+
     type NhqlComment {
         id: Int!
         user: NhqlUser!
@@ -151,13 +158,6 @@ const type = /* GraphQL */ `
         japanese: String
     }
 
-    type NhqlUser {
-        id: Int!
-        username: String!
-        slug: String!
-        avatar: String!
-    }
-
     type Nhql {
         id: Int!
         title: NhqlTitle!
@@ -218,59 +218,37 @@ const type = /* GraphQL */ `
     }
 `
 
-const type2 = /* GraphQL */ `
-    type Book {
-        id: Int! @id
-        title: String!
-        author: String!
+const client = new Client<typeof type>('::1:8080')
+
+const result = await client.$({
+    query: {
+        nhql: {
+            by: {
+                select: {
+                    data: {
+                        title: {
+                            display: true
+                        },
+                        comments: {
+                            select: {
+                                data: {
+                                    comment: true,
+                                    user: {
+                                        username: true,
+                                        id: true,
+                                        slug: true
+                                    }
+                                }
+                            },
+                            where: {
+                                channel: 'HIFUMIN_FIRST'
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-
-    enum Channel {
-        Hello
-        World
-    }
-
-    type Author {
-        id: Int!
-        name: String!
-        book: [Book!]!
-        channel: Channel
-    }
-
-    type Query {
-        books(name: String!, channel: Channel = Hello): [Book!]!
-    }
-`
-
-export type Type = Mobius<typeof type>
-export type Query = Type['Query']
-
-const query: Query = new Proxy({}, {}) as any
-
-const result = query.nhql.by({
-    channel: 'HIFUMIN',
-    id: 177013
 })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-result
+result.nhql.by.data?.comments.data.map((x) => x.user.slug)

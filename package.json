@@ -1,7 +1,7 @@
 {
   "name": "graphql-mobius",
   "version": "0.0.0",
-  "description": "End-to-end type safety, GraphQL Client",
+  "description": "End-to-end type safe TypeScript GraphQL Client",
   "author": {
     "name": "saltyAom",
     "url": "https://github.com/SaltyAom",
