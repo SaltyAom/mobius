@@ -18,6 +18,15 @@ type FirstWord<T extends string> = T extends `${infer A}${Whitespace}${infer _}`
     ? A
     : T
 
+type Split<
+    S extends string,
+    Delimiter extends string
+> = S extends `${infer Head}${Delimiter}${infer Tail}`
+    ? [Head, ...Split<Tail, Delimiter>]
+    : S extends Delimiter
+    ? []
+    : [S]
+
 type Prettify<T> = {
     [K in keyof T]: T[K]
 } & {}
@@ -41,6 +50,24 @@ type GQLTypes = {
     ID: string
 }
 
+type MergeInterface<
+    Interfaces extends string,
+    Known extends CustomTypes = {},
+    Types extends Record<string, unknown> = {}
+> = Interfaces extends `${infer Name},${infer Rest}`
+    ? MergeInterface<
+          Rest,
+          Known,
+          Types &
+              (Trim<Name> extends infer Key extends keyof Known
+                  ? Known[Key]
+                  : never)
+      >
+    : Types &
+          (Trim<Interfaces> extends infer Key extends keyof Known
+              ? Known[Key]
+              : never)
+
 type CreateMobius<
     T extends string,
     Scalars extends Scalar = {},
@@ -51,10 +78,20 @@ type CreateMobius<
               Rest,
               Scalars,
               Known &
-                  (Keyword extends 'type' | 'input' | 'mutation' | 'interface'
+                  (Keyword extends 'type'
                       ? {
-                            [name in Trim<Name>]: Prettify<
-                                MapSchema<Schema, Known & Scalars>
+                            [name in Trim<FirstWord<Name>>]: Prettify<
+                                MapSchema<Schema, Known & Scalars> &
+                                    (Name extends `${infer _} implements ${infer Interfaces}`
+                                        ? MergeInterface<Interfaces, Known>
+                                        : {})
+                            >
+                        }
+                      : Keyword extends 'input' | 'mutation' | 'interface'
+                      ? {
+                            [name in Trim<Name>]: Exclude<
+                                MapSchema<Schema>,
+                                null
                             >
                         }
                       : Keyword extends 'enum'
@@ -224,13 +261,16 @@ export type CreateQuery<T extends Record<string, unknown>> = {
                   select: true | undefined | null
                   where: T[K] extends (_: infer Params) => any ? Params : never
               }
-        : NonNullable<T[K]> extends infer Query extends MaybeArray<
-              Record<string, unknown>
+        : NonNullable<UnwrapArray<T[K]>> extends infer Query extends Record<
+              string,
+              unknown
           >
         ? {} extends UnwrapArray<Query>
             ? true | undefined | null
             : CreateQuery<UnwrapArray<Query>>
         : true | undefined | null
+} & {
+    __typename?: true | undefined | null
 }
 
 type UnwrapFunctionalSchema<
@@ -249,7 +289,7 @@ type Resolve<
 > = Prettify<{
     [K in keyof Query]: Model extends Record<
         K,
-        infer Schema extends (Record<string, unknown> | Function) | null
+        infer Schema extends Record<string, unknown> | Function | null
     >
         ? Query[K] extends true
             ? Model[K]
@@ -276,17 +316,32 @@ type Resolve<
         : never
 }>
 
-export type Query<T extends CustomTypes = {}> = T extends {
-    Query: infer Schema extends CustomTypes
-}
-    ? <
-          Query extends Selective<CreateQuery<Schema>>,
-          Mutate extends Selective<CreateQuery<Schema>>
-      >(params: {
-          query?: Query
-          mutate?: Mutate
-      }) => Promise<Resolve<Query, Schema> & Resolve<Mutate, Schema>>
-    : {}
+export type MakeExecutable<
+    TypeDefs extends {
+        Query: Record<string, unknown>
+        Mutation: Record<string, unknown>
+        Subscription: Record<string, unknown>
+    },
+    Scalars extends Scalar = {}
+> = <
+    Query extends Selective<CreateQuery<TypeDefs['Query']>>,
+    Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>,
+    Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
+>(params: {
+    query?: Query
+    mutate?: Mutate
+    subscription?: Subscription
+}) => Promise<
+    Prettify<
+        ({} extends Query ? {} : Resolve<Query, TypeDefs['Query'] & Scalars>) &
+            ({} extends Mutate
+                ? {}
+                : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>) &
+            ({} extends Subscription
+                ? {}
+                : Resolve<Subscription, TypeDefs['Subscription'] & Scalars>)
+    >
+>
 
 export class Client<
     Declaration extends string = '',
