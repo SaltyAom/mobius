@@ -1,0 +1,68 @@
+{
+  "name": "graphql-mobius",
+  "version": "0.0.0",
+  "description": "End-to-end type safety, GraphQL Client",
+  "author": {
+    "name": "saltyAom",
+    "url": "https://github.com/SaltyAom",
+    "email": "saltyaom@gmail.com"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    "bun": "./dist/index.js",
+    "node": "./dist/cjs/index.js",
+    "require": "./dist/cjs/index.js",
+    "import": "./dist/index.js",
+    "default": "./dist/index.js"
+  },
+  "types": "./src/index.ts",
+  "keywords": [
+    "elysia",
+    "graphql",
+    "mobius",
+    "graphql-mobius"
+  ],
+  "homepage": "https://github.com/SaltyAom/mobius",
+  "repository": {
+    "type": "git",
+    "url": "://github.com/SaltyAom/mobius"
+  },
+  "bugs": "://github.com/SaltyAom/mobius/issues",
+  "license": "MIT",
+  "scripts": {
+    "dev": "bun run --hot example/index.ts",
+    "test": "bun wiptest && npm run test:node",
+    "test:node": "npm install --prefix ./test/node/cjs/ && npm install --prefix ./test/node/esm/ && node ./test/node/cjs/index.js && node ./test/node/esm/index.js",
+    "build": "rimraf dist && tsc --project tsconfig.esm.json && tsc --project tsconfig.cjs.json",
+    "release": "npm run build && npm run test && npm publish --access public",
+    "trace": "tsc --generateTrace ./trace --incremental false"
+  },
+  "dependencies": {
+    "graphql-yoga": "^3.9.1",
+    "graphql": "^16.6.0"
+  },
+  "peerDependencies": {
+    "elysia": ">= 0.5.12",
+    "graphql": ">= 16.6.0",
+    "graphql-yoga": ">= 3.0.0"
+  },
+  "devDependencies": {
+    "@envelop/core": "^3.0.6",
+    "@envelop/graphql-jit": "^5.0.6",
+    "@envelop/parser-cache": "^5.0.6",
+    "@types/node": "^20.1.4",
+    "bun-types": "^0.7.0",
+    "elysia": "^0.6.0-alpha.4",
+    "eslint": "^8.40.0",
+    "rimraf": "4.4.1",
+    "typescript": "^5.0.4"
+  },
+  "peerDependenciesMeta": {
+    "graphql": {
+      "optional": true
+    },
+    "graphql-yoga": {
+      "optional": true
+    }
+  }
+}
