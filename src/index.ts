@@ -31,6 +31,7 @@ type ExtractType<T extends string> =
 
 // enum and types
 type CustomTypes = Record<string, string | Record<string, unknown>>
+type Scalar = Record<string, unknown>
 
 type GQLTypes = {
     String: string
@@ -42,28 +43,28 @@ type GQLTypes = {
 
 type CreateMobius<
     T extends string,
+    Scalars extends Scalar = {},
     Known extends CustomTypes = {}
 > = T extends `${infer Start} ${infer Ops}{${infer Schema}}${infer Rest}`
     ? Trim<Ops> extends `${infer Keyword} ${infer Name}`
         ? CreateMobius<
               Rest,
+              Scalars,
               Known &
-                  (Keyword extends 'type'
+                  (Keyword extends 'type' | 'input' | 'mutation' | 'interface'
                       ? {
                             [name in Trim<Name>]: Prettify<
-                                MapSchema<Schema, Known>
+                                MapSchema<Schema, Known & Scalars>
                             >
                         }
                       : Keyword extends 'enum'
                       ? {
                             [name in Trim<Name>]: Exclude<MapEnum<Schema>, null>
                         }
-                      : never)
+                      : {})
           >
         : Known
     : Known
-
-type A = Mobius<``>
 
 type MapEnum<T extends string, Carry extends string | null = null> = T extends
     | `${infer _}"""${infer _}"""${infer Schema}`
@@ -175,7 +176,29 @@ type MapArgument<
           }
     : Carry
 
-export type Mobius<T extends string> = Prettify<CreateMobius<T>>
+export type Mobius<
+    T extends string,
+    Scalars extends Scalar = {}
+> = CreateMobius<T, Scalars> extends infer Typed
+    ? Prettify<
+          Typed &
+              ('Query' extends keyof Typed
+                  ? {}
+                  : {
+                        Query: {}
+                    }) &
+              ('Mutation' extends keyof Typed
+                  ? {}
+                  : {
+                        Mutation: {}
+                    }) &
+              ('Subscription' extends keyof Typed
+                  ? {}
+                  : {
+                        Subscription: {}
+                    })
+      >
+    : never
 
 type Selective<T> = T extends object
     ? {
@@ -191,13 +214,16 @@ type UnwrapArray<T> = T extends Array<infer R>
     : T
 
 export type CreateQuery<T extends Record<string, unknown>> = {
-    [K in keyof T]: T[K] extends ((
-        _: infer Params
-    ) => infer Query extends MaybeArray<Record<string, unknown>>)
-        ? {
-              select: CreateQuery<UnwrapArray<Query>>
-              where: Params
-          }
+    [K in keyof T]: T[K] extends (_: infer Params) => infer Query
+        ? Query extends MaybeArray<Record<string, unknown>>
+            ? {
+                  select: CreateQuery<UnwrapArray<Query>>
+                  where: Params
+              }
+            : {
+                  select: true | undefined | null
+                  where: T[K] extends (_: infer Params) => any ? Params : never
+              }
         : NonNullable<T[K]> extends infer Query extends MaybeArray<
               Record<string, unknown>
           >
@@ -220,7 +246,7 @@ type UnwrapFunctionalSchema<
 type Resolve<
     Query extends Record<string, unknown>,
     Model extends Record<string, unknown>
-> = {
+> = Prettify<{
     [K in keyof Query]: Model extends Record<
         K,
         infer Schema extends (Record<string, unknown> | Function) | null
@@ -248,7 +274,7 @@ type Resolve<
                 : []
             : Model[K]
         : never
-}
+}>
 
 export type Query<T extends CustomTypes = {}> = T extends {
     Query: infer Schema extends CustomTypes
@@ -264,26 +290,72 @@ export type Query<T extends CustomTypes = {}> = T extends {
 
 export class Client<
     Declaration extends string = '',
-    Schema extends CustomTypes = Mobius<Declaration>,
-    Queries extends Schema extends {
-        Query: infer Queries extends CustomTypes
-    }
-        ? Queries
-        : {} = Schema extends {
-        Query: infer Queries extends CustomTypes
-    }
-        ? Queries
-        : {}
+    const Scalars extends Scalar = {},
+    TypeDefs extends Mobius<Declaration, Scalars> = Mobius<Declaration, Scalars>
 > {
     constructor(public url: string) {}
 
+    mobius: TypeDefs = {} as any
+
     $<
-        Query extends Selective<CreateQuery<Queries>>,
-        Mutate extends Selective<CreateQuery<Queries>>
+        Query extends Selective<CreateQuery<TypeDefs['Query']>>,
+        Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>,
+        Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
     >(params: {
         query?: Query
         mutate?: Mutate
-    }): Promise<Resolve<Query, Queries> & Resolve<Mutate, Queries>> {
+        subscription?: Subscription
+    }): Promise<
+        Prettify<
+            ({} extends Query
+                ? {}
+                : Resolve<Query, TypeDefs['Query'] & Scalars>) &
+                ({} extends Mutate
+                    ? {}
+                    : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>) &
+                ({} extends Subscription
+                    ? {}
+                    : Resolve<Subscription, TypeDefs['Subscription'] & Scalars>)
+        >
+    > {
+        return this as any
+    }
+
+    query<Query extends Selective<CreateQuery<TypeDefs['Query']>>>(params: {
+        query?: Query
+    }): Promise<
+        Prettify<
+            {} extends Query ? {} : Resolve<Query, TypeDefs['Query'] & Scalars>
+        >
+    > {
+        return this as any
+    }
+
+    mutate<
+        Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>
+    >(params: {
+        mutate?: Mutate
+    }): Promise<
+        Prettify<
+            {} extends Mutate
+                ? {}
+                : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>
+        >
+    > {
+        return this as any
+    }
+
+    subscription<
+        Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
+    >(params: {
+        mutate?: Subscription
+    }): Promise<
+        Prettify<
+            {} extends Subscription
+                ? {}
+                : Resolve<Subscription, TypeDefs['Subscription'] & Scalars>
+        >
+    > {
         return this as any
     }
 }

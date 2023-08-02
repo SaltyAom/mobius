@@ -1,17 +1,8 @@
-import { Client } from '../src'
+import { Client, Mobius } from '../src'
 
-const type = /* GraphQL */ `
-    type MultipleNHResponse {
-        success: Boolean!
-        error: String
-        data: [Nhresponse!]!
-    }
-
-    type MultipleNHentaiResponse {
-        success: Boolean!
-        error: String
-        data: [Nhentai!]!
-    }
+const schema = /* GraphQL */ `
+    scalar Date
+    scalar Time
 
     type NhentaiComment {
         id: Int!
@@ -36,16 +27,16 @@ const type = /* GraphQL */ `
         perPage: Int
     }
 
-    type NhentaiImages {
-        pages: [NhentaiPage!]!
-        cover: NhentaiPage!
-        thumbnail: NhentaiPage!
-    }
-
     type NhentaiPage {
         t: String
         w: Int
         h: Int
+    }
+
+    type NhentaiImages {
+        pages: [NhentaiPage!]!
+        cover: NhentaiPage!
+        thumbnail: NhentaiPage!
     }
 
     type NhentaiTag {
@@ -101,6 +92,7 @@ const type = /* GraphQL */ `
         user: NhqlUser!
         created: Int!
         comment: String!
+        date: Date
     }
 
     enum NhqlCommentOrder {
@@ -111,11 +103,6 @@ const type = /* GraphQL */ `
     type NhqlCommentResponse {
         total: Int!
         data: [NhqlComment!]!
-    }
-
-    type NhqlImages {
-        pages: [NhqlPage!]!
-        cover: NhqlPage!
     }
 
     type NhqlInfo {
@@ -135,15 +122,20 @@ const type = /* GraphQL */ `
         language: String!
     }
 
+    type NhqlPageInfo {
+        type: String!
+        width: Int!
+        height: Int!
+    }
+
     type NhqlPage {
         link: String!
         info: NhqlPageInfo!
     }
 
-    type NhqlPageInfo {
-        type: String!
-        width: Int!
-        height: Int!
+    type NhqlImages {
+        pages: [NhqlPage!]!
+        cover: NhqlPage!
     }
 
     type NhqlTag {
@@ -188,6 +180,18 @@ const type = /* GraphQL */ `
         data: [Nhql!]!
     }
 
+    type MultipleNHResponse {
+        success: Boolean!
+        error: String
+        data: [Nhresponse!]!
+    }
+
+    type MultipleNHentaiResponse {
+        success: Boolean!
+        error: String
+        data: [Nhentai!]!
+    }
+
     type NhentaiQuery {
         by(id: Int!, channel: NhqlChannel! = HIFUMIN_FIRST): Nhentai!
         multiple(id: [Int!]!): MultipleNHentaiResponse!
@@ -216,28 +220,51 @@ const type = /* GraphQL */ `
         nhentai: NhentaiQuery!
         nhql: NhqlQuery!
     }
+
+    type Mutation {
+        add(a: String!): String!
+    }
 `
 
-const client = new Client<typeof type>('::1:8080')
+type Scalars = {
+    Date: Date
+}
+
+const client = new Client<typeof schema, Scalars>('::1:8080')
 
 const result = await client.$({
     query: {
         nhql: {
+            multiple: {
+                select: {
+                    data: {
+                        data: {
+                            images: {
+                                cover: {
+                                    link: true,
+                                    info: {
+                                        width: true,
+                                        height: true,
+                                        type: true
+                                    }
+                                }
+                            },
+                            comments: {
+                                where: {
+                                    channel: 'HIFUMIN_FIRST'
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             by: {
                 select: {
                     data: {
-                        title: {
-                            display: true
-                        },
                         comments: {
                             select: {
                                 data: {
-                                    comment: true,
-                                    user: {
-                                        username: true,
-                                        id: true,
-                                        slug: true
-                                    }
+                                    date: true,
                                 }
                             },
                             where: {
@@ -248,7 +275,15 @@ const result = await client.$({
                 }
             }
         }
+    },
+    mutate: {
+        add: {
+            select: true,
+            where: {
+                a: 'a'
+            }
+        }
     }
 })
 
-result.nhql.by.data?.comments.data.map((x) => x.user.slug)
+result.nhql.by.data?.comments.data.map((x) => x.date)
