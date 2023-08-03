@@ -6,7 +6,7 @@ GraphQL to TypeScript type, **no code gen** with ith Prisma-like query syntax, f
 
 Brought to you by [ElysiaJS](https://elysiajs.com)
 
-![mobius](https://github.com/SaltyAom/mobius/assets/35027979/1448c0d4-4662-4192-957f-ff6cbf6ec846)
+![mobius](https://github.com/SaltyAom/mobius/assets/35027979/ae4933b1-d9d4-452f-a44e-564343340061)
 
 ---
 
