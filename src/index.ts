@@ -99,13 +99,13 @@ type ExtractUnion<T extends string> =
         ? `${First}${RemoveMultiLineComment<Rest>}`
         : T
 
-type CreateMobius<
+type CreateInnerMobius<
     T extends string,
     Scalars extends Scalar = {},
     Known extends CustomTypes = {}
 > = T extends `${infer Ops}{${infer Schema}}${infer Rest}`
     ? Trim<Ops> extends `${infer Keyword} ${infer Name}`
-        ? CreateMobius<
+        ? CreateInnerMobius<
               Rest,
               Scalars,
               Known &
@@ -150,14 +150,14 @@ type CreateMobius<
                             }
                         }
                       : Keyword extends 'directive'
-                      ? CreateMobius<
+                      ? CreateInnerMobius<
                             // ? TypeScript is greedy
                             `${Trim<GetLastLine<Ops>>}{${Schema}}`,
                             Scalar,
                             Known
                         >
                       : Keyword extends 'union'
-                      ? CreateMobius<
+                      ? CreateInnerMobius<
                             // ? TypeScript is greedy
                             `${Trim<GetLastLine<Ops>>}{${Schema}}`,
                             Scalar,
@@ -303,10 +303,10 @@ type MapArgument<
           }
     : Carry
 
-export type Mobius<
+export type CreateMobius<
     T extends string,
     Scalars extends Scalar = {}
-> = CreateMobius<RemoveComment<T>, Scalars> extends infer Typed
+> = CreateInnerMobius<RemoveComment<T>, Scalars> extends infer Typed
     ? Prettify<
           Typed &
               ('Query' extends keyof Typed
@@ -338,6 +338,7 @@ type Selective<T> = T extends object
       } & ('where' extends keyof T
           ? T['where'] extends NonNullable<T['where']>
               ? {
+                    select: T['Select']
                     where: T['where']
                 }
               : {}
@@ -444,7 +445,9 @@ export type MakeExecutable<
     >
 >
 
-const mobiusToGraphQL = <T extends 'query' | 'mutation' | 'subscription'>(
+export const mobiusToGraphQL = <
+    T extends 'query' | 'mutation' | 'subscription'
+>(
     type: T,
     params: Record<T, Record<string, unknown>>
 ) => {
@@ -479,8 +482,9 @@ const mobiusToGraphQL = <T extends 'query' | 'mutation' | 'subscription'>(
 
     return (
         type +
-        ' ' +
+        ' _ ' +
         query
+            .replace(/"": true,([ \t]+)?(\n)?/g, '')
             .replace(/("|\\)/g, '')
             // Query quote field to GraphQL
             .replace(/(.*): {/g, (a) => a.slice(1, -3) + ' {')
@@ -495,81 +499,190 @@ const mobiusToGraphQL = <T extends 'query' | 'mutation' | 'subscription'>(
     )
 }
 
-export class Client<
+/**
+ * /: Denotes the start and end of the regex pattern.
+ * fragment: Matches the word "fragment" literally.
+ * \s+: Matches one or more whitespace characters (spaces, tabs, etc.).
+ * (\w+): Capturing group to match the fragment name. \w+ matches one or more word characters (letters, digits, and underscores).
+ * \s+: Matches one or more whitespace characters.
+ * on: Matches the word "on" literally.
+ * \s+: Matches one or more whitespace characters.
+ * [\w:]+: Matches one or more word characters and colons. This is used to match the type condition after "on" in the fragment.
+ * \s*: Matches zero or more whitespace characters.
+ * {: Matches the opening curly brace.
+ * ([^}]*): Capturing group to match the content of the fragment. [^}]* matches zero or more characters that are not closing curly braces.
+ * }: Matches the closing curly brace.
+ * /g: Global flag to match all occurrences of the pattern in the input string.
+ */
+const extractFragment = /fragment\s+(\w+)\s+on\s+[\w:]+\s*{([^}]*)}/g
+
+/**
+ * Create Fragment from Schema string
+ */
+export const createFragment = (schema: string) => {
+    const matches = schema.match(extractFragment)
+    if (!matches) return {}
+
+    const fragments = {}
+
+    if (matches) {
+        for (const match of matches) {
+            const [, name, content] = extractFragment.exec(matches)
+            const current = {}
+
+            for (const item of content.split(/(,|\n)/g))
+                current[item.trim()] = true
+
+            fragments[name] = current
+        }
+    }
+
+    return fragments
+}
+
+export type ToSelectiveFragment<T extends Record<string, unknown>> = {
+    [K in keyof T]: T[K] extends Record<string, unknown>
+        ? ToSelectiveFragment<T[K]>
+        : true
+}
+
+export class Mobius<
     Declaration extends string = '',
     const Scalars extends Scalar = {},
-    TypeDefs extends Mobius<Declaration, Scalars> = Mobius<Declaration, Scalars>
+    TypeDefs extends CreateMobius<Declaration, Scalars> = CreateMobius<
+        Declaration,
+        Scalars
+    >
 > {
-    constructor(public url: string) {}
-
     /**
      * ! For type declaration only
      */
-    mobius: TypeDefs = {} as any
+    mobius: TypeDefs | null = null
+    /**
+     * Available if `typeDefs` is passed
+     */
+    fragments: ToSelectiveFragment<TypeDefs['Fragment']> | null = null
+
+    constructor(
+        public config?: {
+            fetch?: (query: string) => Promise<unknown>
+            typeDefs?: Declaration
+        }
+    ) {
+        if (config?.typeDefs) this.fragments = createFragment(config.typeDefs)
+    }
+
+    protected get fetch() {
+        return this.config.fetch
+    }
 
     $<
-        Query extends Selective<CreateQuery<TypeDefs['Query']>>,
-        Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>,
-        Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
+        Query extends Selective<CreateQuery<TypeDefs['Query']>> = {},
+        Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>> = {},
+        Subscription extends Selective<
+            CreateQuery<TypeDefs['Subscription']>
+        > = {}
     >(params: {
         query?: Query
         mutate?: Mutate
         subscription?: Subscription
-    }): Promise<
-        Prettify<
-            ({} extends Query
-                ? {}
-                : Resolve<Query, TypeDefs['Query'] & Scalars>) &
-                ({} extends Mutate
-                    ? {}
-                    : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>) &
-                ({} extends Subscription
-                    ? {}
-                    : Resolve<Subscription, TypeDefs['Subscription'] & Scalars>)
+    }): {
+        result: Promise<
+            | Prettify<
+                  ({} extends Query
+                      ? {}
+                      : Resolve<Query, TypeDefs['Query'] & Scalars>) &
+                      ({} extends Mutate
+                          ? {}
+                          : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>) &
+                      ({} extends Subscription
+                          ? {}
+                          : Resolve<
+                                Subscription,
+                                TypeDefs['Subscription'] & Scalars
+                            >)
+              >
+            | undefined
         >
-    > {
-        return {
+        query: string
+        mutation: string
+        subscription: string
+    } {
+        const q = {
             query: mobiusToGraphQL('query', params),
             mutation: mobiusToGraphQL('mutation', params),
             subscription: mobiusToGraphQL('subscription', params)
         }
+
+        return {
+            ...q,
+            result: {
+                query: this.fetch(q.query),
+                mutation: this.fetch(q.mutation),
+                subscription: this.fetch(q.subscription)
+            }
+        }
     }
 
-    query<Query extends Selective<CreateQuery<TypeDefs['Query']>>>(
+    query<const Query extends Selective<CreateQuery<TypeDefs['Query']>> = {}>(
         params: Query
-    ): Promise<
-        Prettify<
+    ): {
+        query: string
+        result: Promise<Prettify<
             {} extends Query ? {} : Resolve<Query, TypeDefs['Query'] & Scalars>
-        >
-    > {
-        return mobiusToGraphQL('query', params)
+        > | null>
+    } {
+        const q = mobiusToGraphQL('query', params)
+
+        return {
+            query: q,
+            result: this.fetch(q)
+        }
     }
 
-    mutate<Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>>(
+    mutate<Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>> = {}>(
         params: Mutate
-    ): Promise<
-        Prettify<
-            {} extends Mutate
-                ? {}
-                : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>
+    ): {
+        mutate: string
+        result: Promise<
+            Prettify<
+                {} extends Mutate
+                    ? {}
+                    : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>
+            >
         >
-    > {
-        return mobiusToGraphQL('mutate', params)
+    } {
+        const q = mobiusToGraphQL('mutate', params)
+
+        return {
+            mutate: q,
+            result: this.fetch(q)
+        }
     }
 
     subscription<
-        Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
+        Subscription extends Selective<
+            CreateQuery<TypeDefs['Subscription']>
+        > = {}
     >(
         params: Subscription
-    ): Promise<
-        Prettify<
-            {} extends Subscription
-                ? {}
-                : Resolve<Subscription, TypeDefs['Subscription'] & Scalars>
+    ): {
+        subscription: string
+        result: Promise<
+            Prettify<
+                {} extends Subscription
+                    ? {}
+                    : Resolve<Subscription, TypeDefs['Subscription'] & Scalars>
+            >
         >
-    > {
-        return mobiusToGraphQL('subscription', params)
+    } {
+        const q = mobiusToGraphQL('subscription', params)
+
+        return {
+            subscription: q,
+            result: this.fetch(q)
+        }
     }
 }
 
-export default Client
+export default Mobius

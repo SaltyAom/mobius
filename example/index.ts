@@ -1,6 +1,6 @@
-import Client from '../src'
+import { Mobius } from '../src'
 
-const schema = /* GraphQL */ `
+const typeDefs = /* GraphQL */ `
     directive @deprecated(reason: String = "EOL") on FIELD_DEFINITION
     scalar Date
 
@@ -39,6 +39,11 @@ const schema = /* GraphQL */ `
     union CDEF = CD | EF
     union ABC = B | C
 
+    fragment ABCFrag on ABC {
+        A
+        B
+    }
+
     type Query {
         Hi(cdef: CDEF!): ABC!
         Hello(word: String!, again: D!): String!
@@ -49,18 +54,25 @@ type Scalar = {
     Date: Date
 }
 
-const client = new Client<typeof schema, Scalar>('::1')
+const mobius = new Mobius<typeof typeDefs, Scalar>({
+    typeDefs,
+    fetch
+})
 
-const a = await client.query({
-    Hello: {
-        where: {
-            word: 'awd',
-            again: {
-                nested: 'AWD'
+const { ABCFrag } = mobius.fragments!
+
+const a = await mobius.query({
+    Hi: {
+        select: {
+            ...ABCFrag,
+            D: {
+                nested: true
             }
         },
-        select: true
+        where: {
+            cdef: 'D'
+        }
     }
 })
 
-console.log(a)
+console.log(a.query)

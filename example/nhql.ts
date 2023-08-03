@@ -1,4 +1,5 @@
-import { Client, type Mobius, type MakeExecutable } from '../src'
+import { Mobius } from '../src'
+import gql, { client } from '@saltyaom/gql'
 
 const schema = /* GraphQL */ `
     scalar Date
@@ -221,57 +222,24 @@ const schema = /* GraphQL */ `
     }
 `
 
-type Scalars = {
-    Date: Date
-}
+client.config('https://seele.hifumin.app/graphql')
 
-const client = new Client<typeof schema, Scalars>('::1:8080')
+const mobius = new Mobius({
+    typeDefs: schema,
+    fetch: gql
+})
 
-const result = await client.query({
+mobius.query({
     nhql: {
-        multiple: {
-            where: {
-                id: [177013, 229345]
-            },
-            select: {
-                data: {
-                    data: {
-                        __typename: true,
-                        images: {
-                            cover: {
-                                link: true,
-                                info: {
-                                    width: true,
-                                    height: true,
-                                    type: true
-                                }
-                            }
-                        },
-                        comments: {
-                            where: {
-                                channel: 'HIFUMIN_FIRST'
-                            }
-                        }
-                    }
-                }
-            }
-        },
         by: {
             where: {
-                channel: 'HIFUMIN_FIRST',
-                id: 177013
+                id: 177013,
+                channel: 'HIFUMIN_FIRST'
             },
             select: {
                 data: {
-                    comments: {
-                        select: {
-                            data: {
-                                comment: true
-                            }
-                        },
-                        where: {
-                            channel: 'HIFUMIN_FIRST'
-                        }
+                    title: {
+                        japanese: true
                     }
                 }
             }
@@ -279,6 +247,22 @@ const result = await client.query({
     }
 })
 
-console.log(result)
+const response = await mobius.query({
+    nhql: {
+        by: {
+            where: {
+                id: 177013,
+                channel: 'HIFUMIN_FIRST'
+            },
+            select: {
+                data: {
+                    title: {
+                        display: true
+                    }
+                }
+            }
+        }
+    }
+})
 
-// result.nhql.by.data?.comments.data.map((x) => x.date)
+const result = await response.result
