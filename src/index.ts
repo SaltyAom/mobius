@@ -444,6 +444,57 @@ export type MakeExecutable<
     >
 >
 
+const mobiusToGraphQL = <T extends 'query' | 'mutation' | 'subscription'>(
+    type: T,
+    params: Record<T, Record<string, unknown>>
+) => {
+    const query = JSON.stringify(
+        params[type] ?? params,
+        (key, value) => {
+            if (typeof value !== 'object') return value
+
+            if (
+                typeof value === 'object' &&
+                'select' in value &&
+                !('where' in value)
+            )
+                return value.select
+
+            const mapped = {}
+
+            for (const [key, child] of Object.entries(value)) {
+                if (typeof child === 'object' && 'where' in child) {
+                    mapped[`${key}(${JSON.stringify(child.where)})`] =
+                        child.select
+                    continue
+                }
+
+                mapped[key] = child
+            }
+
+            return mapped
+        },
+        2
+    )
+
+    return (
+        type +
+        ' ' +
+        query
+            .replace(/("|\\)/g, '')
+            // Query quote field to GraphQL
+            .replace(/(.*): {/g, (a) => a.slice(1, -3) + ' {')
+            // Quote field: true to GraphQL
+            .replace(/(\w+): true(,)?/g, (a) =>
+                a.slice(0, a[a.length - 1] === ',' ? -7 : -6)
+            )
+            .replace(/\(\{/g, '(')
+            .replace(/\}\)/g, ')')
+            // Replace primitive value query
+            .replace(/\): true/g, ')')
+    )
+}
+
 export class Client<
     Declaration extends string = '',
     const Scalars extends Scalar = {},
@@ -451,6 +502,9 @@ export class Client<
 > {
     constructor(public url: string) {}
 
+    /**
+     * ! For type declaration only
+     */
     mobius: TypeDefs = {} as any
 
     $<
@@ -474,45 +528,47 @@ export class Client<
                     : Resolve<Subscription, TypeDefs['Subscription'] & Scalars>)
         >
     > {
-        return this as any
+        return {
+            query: mobiusToGraphQL('query', params),
+            mutation: mobiusToGraphQL('mutation', params),
+            subscription: mobiusToGraphQL('subscription', params)
+        }
     }
 
-    query<Query extends Selective<CreateQuery<TypeDefs['Query']>>>(params: {
-        query: Query
-    }): Promise<
+    query<Query extends Selective<CreateQuery<TypeDefs['Query']>>>(
+        params: Query
+    ): Promise<
         Prettify<
             {} extends Query ? {} : Resolve<Query, TypeDefs['Query'] & Scalars>
         >
     > {
-        return this as any
+        return mobiusToGraphQL('query', params)
     }
 
-    mutate<
-        Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>
-    >(params: {
-        mutate: Mutate
-    }): Promise<
+    mutate<Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>>(
+        params: Mutate
+    ): Promise<
         Prettify<
             {} extends Mutate
                 ? {}
                 : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>
         >
     > {
-        return this as any
+        return mobiusToGraphQL('mutate', params)
     }
 
     subscription<
         Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
-    >(params: {
-        mutate: Subscription
-    }): Promise<
+    >(
+        params: Subscription
+    ): Promise<
         Prettify<
             {} extends Subscription
                 ? {}
                 : Resolve<Subscription, TypeDefs['Subscription'] & Scalars>
         >
     > {
-        return this as any
+        return mobiusToGraphQL('subscription', params)
     }
 }
 

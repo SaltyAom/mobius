@@ -41,7 +41,7 @@ const schema = /* GraphQL */ `
 
     type Query {
         Hi(cdef: CDEF!): ABC!
-        Hello(word: String!, again: D!): B!
+        Hello(word: String!, again: D!): String!
     }
 `
 
@@ -51,34 +51,16 @@ type Scalar = {
 
 const client = new Client<typeof schema, Scalar>('::1')
 
-client.mobius.Fragment
-
-const a = await client.$({
-    query: {
-        Hi: {
-            where: {
-                cdef: 'E'
-            },
-            select: {
-                A: true,
-                D: {
-                    nested: true
-                }
+const a = await client.query({
+    Hello: {
+        where: {
+            word: 'awd',
+            again: {
+                nested: 'AWD'
             }
         },
-        Hello: {
-            select: {
-                B: true
-            },
-            where: {
-                word: 'Hello World',
-                again: {
-                    nested: 's'
-                }
-            }
-        }
+        select: true
     }
 })
 
-a.Hi.D.nested
-a.Hello.B
+console.log(a)

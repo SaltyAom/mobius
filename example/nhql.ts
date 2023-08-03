@@ -92,7 +92,6 @@ const schema = /* GraphQL */ `
         user: NhqlUser!
         created: Int!
         comment: String!
-        date: Date
     }
 
     enum NhqlCommentOrder {
@@ -220,10 +219,6 @@ const schema = /* GraphQL */ `
         nhentai: NhentaiQuery!
         nhql: NhqlQuery!
     }
-
-    type Mutation {
-        add(a: String!): String!
-    }
 `
 
 type Scalars = {
@@ -232,42 +227,27 @@ type Scalars = {
 
 const client = new Client<typeof schema, Scalars>('::1:8080')
 
-const result = await client.$({
-    query: {
-        nhql: {
-            multiple: {
-                select: {
+const result = await client.query({
+    nhql: {
+        multiple: {
+            where: {
+                id: [177013, 229345]
+            },
+            select: {
+                data: {
                     data: {
-                        data: {
-                            "__typename": true,
-                            images: {
-                                cover: {
-                                    link: true,
-                                    info: {
-                                        width: true,
-                                        height: true,
-                                        type: true
-                                    }
-                                }
-                            },
-                            comments: {
-                                where: {
-                                    channel: 'HIFUMIN_FIRST'
+                        __typename: true,
+                        images: {
+                            cover: {
+                                link: true,
+                                info: {
+                                    width: true,
+                                    height: true,
+                                    type: true
                                 }
                             }
-                        }
-                    }
-                }
-            },
-            by: {
-                select: {
-                    data: {
+                        },
                         comments: {
-                            select: {
-                                data: {
-                                    date: true
-                                }
-                            },
                             where: {
                                 channel: 'HIFUMIN_FIRST'
                             }
@@ -275,16 +255,30 @@ const result = await client.$({
                     }
                 }
             }
-        }
-    },
-    mutate: {
-        add: {
-            select: true,
+        },
+        by: {
             where: {
-                a: 'a'
+                channel: 'HIFUMIN_FIRST',
+                id: 177013
+            },
+            select: {
+                data: {
+                    comments: {
+                        select: {
+                            data: {
+                                comment: true
+                            }
+                        },
+                        where: {
+                            channel: 'HIFUMIN_FIRST'
+                        }
+                    }
+                }
             }
         }
     }
 })
 
-result.nhql.by.data?.comments.data.map((x) => x.date)
+console.log(result)
+
+// result.nhql.by.data?.comments.data.map((x) => x.date)
