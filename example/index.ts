@@ -1,60 +1,63 @@
-import Client, { RemoveComment, RemoveMultiLineComment } from '../src'
+import Client from '../src'
 
 const schema = /* GraphQL */ `
-    directive @deprecated(
-        reason: String = "No longer supported"
-    ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE
+    directive @deprecated(reason: String = "EOL") on FIELD_DEFINITION
+    scalar Date
 
-    directive @deprecated(
-        reason: String = "No longer supported"
-    ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE
-
-    type A {
-        hello: String!
+    interface A {
+        A: String!
     }
 
-    type B {
-        hello: String!
+    enum CD {
+        C
+        D
     }
 
-    union AB = A | B
+    enum EF {
+        E
+        F
+    }
 
-    type C {
-        hello: String!
+    type B implements A {
+        B: String!
     }
 
     type D {
-        hello: String!
+        nested: Date!
     }
 
+    type C {
+        C: String
+        D: D!
+    }
+
+    # This is C | D | E | F
+    union CDEF = CD | EF
+
+    union ABC = B | C
+
     type Query {
-        Hi(A: String!, W: String!): D!
+        Hi(cdef: CDEF): ABC!
     }
 `
 
-type A = RemoveComment<typeof schema>
+type Scalar = {
+    Date: Date
+}
 
-const client = new Client<typeof schema>('::1')
+const client = new Client<typeof schema, Scalar>('::1')
 
-client.query({
+const a = await client.$({
     query: {
         Hi: {
             select: {
-                hello: true
-            },
-            where: {
-                A: 'Hello',
-                W: 'A'
+                A: true,
+                D: {
+                    nested: true
+                }
             }
         }
     }
 })
 
-// const result = await client.$({
-//     query: {
-//         __typename: true,
-//         hi: {
-//             hello: true
-//         }
-//     }
-// })
+a.Hi.D.nested

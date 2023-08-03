@@ -23,6 +23,12 @@ type Split<
     ? []
     : [S]
 
+type SplitUnion<S extends string> = S extends `${infer Head}|${infer Tail}`
+    ? [Trim<Head>, ...SplitUnion<Tail>]
+    : S extends '|'
+    ? []
+    : [Trim<S>]
+
 type GetLastLine<S extends string> = S extends `${infer Head}\n${infer Tail}`
     ? GetLastLine<Tail>
     : S extends '\n'
@@ -83,7 +89,12 @@ type RemoveSingleLineComment<T extends string> =
         ? `${First}${RemoveSingleLineComment<Rest>}`
         : T
 
-export type RemoveMultiLineComment<T extends string> =
+type RemoveMultiLineComment<T extends string> =
+    T extends `${infer First}"""${infer Comment}"""${infer Rest}`
+        ? `${First}${RemoveMultiLineComment<Rest>}`
+        : T
+
+type ExtractUnion<T extends string> =
     T extends `${infer First}"""${infer Comment}"""${infer Rest}`
         ? `${First}${RemoveMultiLineComment<Rest>}`
         : T
@@ -119,13 +130,50 @@ type CreateMobius<
                             [name in Trim<Name>]: Exclude<MapEnum<Schema>, null>
                         }
                       : Keyword extends 'directive'
-                      ? CreateMobius<`${Trim<
-                            GetLastLine<Ops>
-                        >}{${Schema}}${Rest}`>
+                      ? CreateMobius<
+                            // ? TypeScript is greedy
+                            `${Trim<GetLastLine<Ops>>}{${Schema}}`,
+                            Scalar,
+                            Known
+                        >
+                      : Keyword extends 'union'
+                      ? CreateMobius<
+                            // ? TypeScript is greedy
+                            `${Trim<GetLastLine<Ops>>}{${Schema}}`,
+                            Scalar,
+                            Known & MapUnion<Ops, Scalars & Known>
+                        >
                       : {})
           >
         : Known
     : Known
+
+type MapInnerUnion<
+    T extends string[],
+    Known extends CustomTypes,
+    Carry extends Record<string, unknown> = {}
+> = T extends [infer First extends string, ...infer Rest extends string[]]
+    ? MapInnerUnion<
+          Rest,
+          Known,
+          Prettify<
+              Known extends { [a in First]: infer A }
+                  ? A extends string | boolean | number | symbol
+                      ? Carry | A
+                      : Carry & A
+                  : Carry
+          >
+      >
+    : Carry
+
+type MapUnion<
+    T extends string,
+    Known extends CustomTypes = {}
+> = T extends `${infer _}union ${infer Name}=${infer Mapped}\n${infer Rest}`
+    ? {
+          [name in TrimRight<Name>]: MapInnerUnion<SplitUnion<Mapped>, Known>
+      } & MapUnion<`\n${Rest}`, Known>
+    : {}
 
 type MapEnum<
     T extends string,
