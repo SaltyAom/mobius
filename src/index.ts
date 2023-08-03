@@ -31,12 +31,11 @@ type Prettify<T> = {
     [K in keyof T]: T[K]
 } & {}
 
-type ExtractType<T extends string> =
-    T extends `${infer _}${infer Type}\n${infer Rest}`
-        ? [Type, Rest]
-        : T extends `${infer _}${infer Type} ${infer Rest}`
-        ? [Type, Rest]
-        : never
+type ExtractType<T extends string> = T extends `${infer Type}\n${infer Rest}`
+    ? [TrimLeft<Type>, Rest]
+    : T extends `${infer Type} ${infer Rest}`
+    ? [TrimLeft<Type>, Rest]
+    : never
 
 // enum and types
 type CustomTypes = Record<string, string | Record<string, unknown>>
@@ -68,11 +67,26 @@ type MergeInterface<
               ? Known[Key]
               : never)
 
+// ? I'm even sure why this work, I just bruteforce
+export type RemoveComment<
+    T extends string,
+    Carry extends string = T
+> = T extends `${infer First}#${infer Comment}\n${infer Rest}`
+    ? `${First}${RemoveComment<Rest, Comment>}`
+    : RemoveMultilineComment<T>
+
+export type RemoveMultilineComment<
+    T extends string,
+    Carry extends string = T
+> = T extends `${infer First}"""${infer Comment}"""${infer Rest}`
+    ? `${First}${RemoveMultilinreComment<Comment, RemoveComment<Rest>>}`
+    : Carry
+
 type CreateMobius<
     T extends string,
     Scalars extends Scalar = {},
     Known extends CustomTypes = {}
-> = T extends `${infer Start} ${infer Ops}{${infer Schema}}${infer Rest}`
+> = T extends `${infer Ops}{${infer Schema}}${infer Rest}`
     ? Trim<Ops> extends `${infer Keyword} ${infer Name}`
         ? CreateMobius<
               Rest,
@@ -103,21 +117,19 @@ type CreateMobius<
         : Known
     : Known
 
-type MapEnum<T extends string, Carry extends string | null = null> = T extends
-    | `${infer _}"""${infer _}"""${infer Schema}`
-    | `${infer _}#${infer _}\n${infer Schema}`
-    ? MapEnum<Schema, Carry>
-    : T extends `${infer Name}${Whitespace | ','}${infer Rest}`
+type MapEnum<
+    T extends string,
+    Carry extends string | null = null
+> = T extends `${infer Name}${Whitespace | ','}${infer Rest}`
     ? MapEnum<Rest, Trim<Name> | Carry>
     : T extends `${infer Name}`
     ? Carry | Trim<Name>
     : Carry
 
-type MapSchema<T extends string, Known extends CustomTypes = {}> = T extends
-    | `${infer _}"""${infer _}"""${infer Schema}`
-    | `${infer _}#${infer _}\n${infer Schema}`
-    ? MapSchema<Schema, Known>
-    : T extends `${infer Name}:${infer Type}`
+type MapSchema<
+    T extends string,
+    Known extends CustomTypes = {}
+> = T extends `${infer Name}:${infer Type}`
     ? Name extends `${infer Name}(${infer Params}`
         ? T extends `${infer Name}(${infer Params}):${infer Type}`
             ? ExtractType<Type> extends [
@@ -133,8 +145,8 @@ type MapSchema<T extends string, Known extends CustomTypes = {}> = T extends
                           MapArgument<Params, Known>
                       > extends infer Argument
                           ? Partial<Argument> extends Argument
-                              ? (argument?: Argument) => MapType<Type, Known>
-                              : (argument: Argument) => MapType<Type, Known>
+                              ? (p?: Argument) => MapType<Type, Known>
+                              : (p: Argument) => MapType<Type, Known>
                           : never
                   } & MapSchema<Rest, Known>
                 : {}
@@ -216,7 +228,7 @@ type MapArgument<
 export type Mobius<
     T extends string,
     Scalars extends Scalar = {}
-> = CreateMobius<T, Scalars> extends infer Typed
+> = CreateMobius<RemoveComment<T>, Scalars> extends infer Typed
     ? Prettify<
           Typed &
               ('Query' extends keyof Typed
@@ -245,14 +257,14 @@ type Selective<T> = T extends object
 
 type MaybeArray<T> = T | T[]
 type UnwrapArray<T> = T extends Array<infer R>
-    ? R extends Array<any>
+    ? R extends any[]
         ? UnwrapArray<R>
         : R
     : T
 
 export type CreateQuery<T extends Record<string, unknown>> = {
     [K in keyof T]: T[K] extends (_: infer Params) => infer Query
-        ? Query extends MaybeArray<Record<string, unknown>>
+        ? UnwrapArray<Query> extends Record<string, unknown>
             ? {
                   select: CreateQuery<UnwrapArray<Query>>
                   where: Params

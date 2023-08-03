@@ -55,7 +55,7 @@
     "elysia": "^0.6.0-alpha.4",
     "eslint": "^8.40.0",
     "rimraf": "4.4.1",
-    "typescript": "^5.0.4"
+    "typescript": "5.0"
   },
   "peerDependenciesMeta": {
     "graphql": {

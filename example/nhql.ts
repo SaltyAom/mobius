@@ -232,64 +232,59 @@ type Scalars = {
 
 const client = new Client<typeof schema, Scalars>('::1:8080')
 
-// const result = await client.$({
-//     query: {
-//         nhql: {
-//             multiple: {
-//                 select: {
-//                     data: {
-//                         data: {
-//                             "__typename": true,
-//                             images: {
-//                                 cover: {
-//                                     link: true,
-//                                     info: {
-//                                         width: true,
-//                                         height: true,
-//                                         type: true
-//                                     }
-//                                 }
-//                             },
-//                             comments: {
-//                                 where: {
-//                                     channel: 'HIFUMIN_FIRST'
-//                                 }
-//                             }
-//                         }
-//                     }
-//                 }
-//             },
-//             by: {
-//                 select: {
-//                     data: {
-//                         comments: {
-//                             select: {
-//                                 data: {
-//                                     date: true
-//                                 }
-//                             },
-//                             where: {
-//                                 channel: 'HIFUMIN_FIRST'
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     },
-//     mutate: {
-//         add: {
-//             select: true,
-//             where: {
-//                 a: 'a'
-//             }
-//         }
-//     }
-// })
+const result = await client.$({
+    query: {
+        nhql: {
+            multiple: {
+                select: {
+                    data: {
+                        data: {
+                            "__typename": true,
+                            images: {
+                                cover: {
+                                    link: true,
+                                    info: {
+                                        width: true,
+                                        height: true,
+                                        type: true
+                                    }
+                                }
+                            },
+                            comments: {
+                                where: {
+                                    channel: 'HIFUMIN_FIRST'
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            by: {
+                select: {
+                    data: {
+                        comments: {
+                            select: {
+                                data: {
+                                    date: true
+                                }
+                            },
+                            where: {
+                                channel: 'HIFUMIN_FIRST'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    mutate: {
+        add: {
+            select: true,
+            where: {
+                a: 'a'
+            }
+        }
+    }
+})
 
-// result.nhql.by.data?.comments.data.map((x) => x.date)
-
-// type TypeDefs = Mobius<typeof schema>
-// type Executable = MakeExecutable<TypeDefs>
-
-// const a: Executable = new Proxy({}, {}) as any
+result.nhql.by.data?.comments.data.map((x) => x.date)

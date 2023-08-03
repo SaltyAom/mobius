@@ -1,10 +1,6 @@
-import Client from '../src'
+import Client, { RemoveMultilineComment } from '../src'
 
 const schema = /* GraphQL */ `
-    directive @requiredCapabilities(
-    requiredCapabilities: [String!]
-    ) {}
-
     interface B {
         B: String!
     }
@@ -13,19 +9,33 @@ const schema = /* GraphQL */ `
         C: String!
     }
 
+    """
+    Hello World
+    """
+    type A implements B, C {
+        # Here
+        hello: String! @possibleTypes(concreteTypes: ["EnterpriseAdministratorInvitation"])
+        # There
+        world: String!
+    }
+
+    """
+    Hello World
+    """
     type D {
         hello: String!
     }
 
-    type A implements B, C {
+    type E {
         hello: String!
-        world: String!
+    }
+
+    type Query {
+        getHello(id: String!, e: E!): A!
     }
 `
 
 const client = new Client<typeof schema>('::1')
-
-client.mobius.A
 
 // const result = await client.$({
 //     query: {
