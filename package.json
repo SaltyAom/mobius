@@ -37,10 +37,6 @@
     "release": "npm run build && npm run test && npm publish --access public",
     "trace": "tsc --generateTrace ./trace --incremental false"
   },
-  "dependencies": {
-    "graphql-yoga": "^3.9.1",
-    "graphql": "^16.7.1"
-  },
   "peerDependencies": {
     "elysia": ">= 0.5.12",
     "graphql": ">= 16.6.0",
