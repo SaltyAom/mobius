@@ -8,6 +8,10 @@ const schema = /* GraphQL */ `
         A: String!
     }
 
+    fragment Frag on A {
+        A
+    }
+
     enum CD {
         C
         D
@@ -23,7 +27,7 @@ const schema = /* GraphQL */ `
     }
 
     type D {
-        nested: Date!
+        nested: String!
     }
 
     type C {
@@ -33,11 +37,11 @@ const schema = /* GraphQL */ `
 
     # This is C | D | E | F
     union CDEF = CD | EF
-
     union ABC = B | C
 
     type Query {
-        Hi(cdef: CDEF): ABC!
+        Hi(cdef: CDEF!): ABC!
+        Hello(word: String!, again: D!): B!
     }
 `
 
@@ -47,13 +51,29 @@ type Scalar = {
 
 const client = new Client<typeof schema, Scalar>('::1')
 
+client.mobius.Frag
+
 const a = await client.$({
-    query: {
-        Hi: {
-            select: {
-                A: true,
-                D: {
-                    nested: true
+    "query": {
+        "Hi": {
+            "where": {
+                "cdef": "E"
+            },
+            "select": {
+                "A": true,
+                "D": {
+                    'nested': true
+                }
+            }
+        },
+        'Hello': {
+            'select': {
+                'B': true
+            },
+            'where': {
+                'word': "Hello World",
+                'again': {
+                    'nested': "s"
                 }
             }
         }
@@ -61,3 +81,4 @@ const a = await client.$({
 })
 
 a.Hi.D.nested
+a.Hello.B

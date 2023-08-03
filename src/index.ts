@@ -129,6 +129,21 @@ type CreateMobius<
                       ? {
                             [name in Trim<Name>]: Exclude<MapEnum<Schema>, null>
                         }
+                      : Keyword extends 'fragment'
+                      ? {
+                            [name in Trim<FirstWord<Name>>]: Prettify<
+                                Name extends `${infer _} on ${infer Target}`
+                                    ? Target extends keyof Known
+                                        ? Pick<
+                                              Known[Target],
+                                              NonNullable<
+                                                  Exclude<MapEnum<Schema>, ''>
+                                              >
+                                          >
+                                        : {}
+                                    : {}
+                            >
+                        }
                       : Keyword extends 'directive'
                       ? CreateMobius<
                             // ? TypeScript is greedy
