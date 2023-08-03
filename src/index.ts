@@ -104,11 +104,6 @@ type RemoveMultiLineComment<T extends string> =
         ? `${First}${RemoveMultiLineComment<Rest>}`
         : T
 
-type ExtractUnion<T extends string> =
-    T extends `${infer First}"""${infer Comment}"""${infer Rest}`
-        ? `${First}${RemoveMultiLineComment<Rest>}`
-        : T
-
 type CreateInnerMobius<
     T extends string,
     Scalars extends Scalar = {},
