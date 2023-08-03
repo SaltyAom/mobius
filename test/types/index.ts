@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'expect-type'
 
-import type { CreateMobius } from '../../src'
+import { Mobius, type CreateMobius } from '../../src'
 
 // ? Parse type
 {
@@ -854,5 +854,36 @@ import type { CreateMobius } from '../../src'
         }
         Mutation: {}
         Subscription: {}
+    }>()
+
+    const mobius = new Mobius<typeof typeDefs, Scalar>({
+        typeDefs,
+        fetch
+    })
+
+    const { ABCFrag } = mobius.fragments!
+
+    const { result } = await mobius.query({
+        Hi: {
+            select: {
+                ...ABCFrag,
+                D: {
+                    nested: true
+                }
+            },
+            where: {
+                cdef: 'D'
+            }
+        }
+    })
+
+    expectTypeOf<NonNullable<Awaited<typeof result>>>().toEqualTypeOf<{
+        Hi: {
+            D: {
+                nested: string
+            }
+            A: string
+            B: string
+        }
     }>()
 }

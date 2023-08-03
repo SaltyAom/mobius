@@ -1,3 +1,14 @@
+/**
+ * # Mobius
+ *
+ * ! Don't try to understand this
+ * ! Dark art ahead
+ *
+ * ? Total hours wasted by this: 0
+ *
+ * @author saltyAom
+ */
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 type Whitespace =
     | '\u{9}' // '\t'
@@ -83,7 +94,6 @@ export type RemoveComment<T extends string> = RemoveMultiLineComment<
     RemoveSingleLineComment<T>
 >
 
-// ? I'm even sure why this work, I just bruteforce
 type RemoveSingleLineComment<T extends string> =
     T extends `${infer First}#${infer Comment}\n${infer Rest}`
         ? `${First}${RemoveSingleLineComment<Rest>}`
@@ -328,6 +338,31 @@ type MapArgument<
           }
     : Carry
 
+/**
+ * Infers GraphQL types to TypeScript
+ *
+ * @example
+ * ```ts
+ * ```ts
+ * import type { CreateMobius } from 'graphql-mobius'
+ *
+ * const typeDefs = `
+ *     # Hello World
+ *     type A {
+ *         A: String!
+ *         B: String!
+ *     }
+ *
+ *     # Hello World
+ *     type Query {
+ *         Hello(word: String!): A!
+ *     }
+ * `
+ *
+ * // This is an equivalent to calling new Mobius().mobius
+ * type Engine = CreateMobius<typeof typeDefs>
+ * ```
+ */
 export type CreateMobius<
     T extends string,
     Scalars extends Scalar = {}
@@ -377,6 +412,9 @@ type UnwrapArray<T> = T extends Array<infer R>
         : R
     : T
 
+/**
+ * Create Prisma-like argument syntax for Client
+ */
 export type CreateQuery<T extends Record<string, unknown>> = {
     [K in keyof T]: T[K] extends (_: infer Params) => infer Query
         ? UnwrapArray<Query> extends Record<string, unknown>
@@ -443,6 +481,9 @@ type Resolve<
         : never
 }>
 
+/**
+ * Create Prisma-like function for GraphQL
+ */
 export type MakeExecutable<
     TypeDefs extends {
         Query: Record<string, unknown>
@@ -470,6 +511,9 @@ export type MakeExecutable<
     >
 >
 
+/**
+ * Map Prisma-like JSON to GraphQL query (string)
+ */
 export const mobiusToGraphQL = <
     T extends 'query' | 'mutation' | 'subscription'
 >(
@@ -542,7 +586,7 @@ export const mobiusToGraphQL = <
 const extractFragment = /fragment\s+(\w+)\s+on\s+[\w:]+\s*{([^}]*)}/g
 
 /**
- * Create Fragment from Schema string
+ * Create fragments for usage in Prisma-like client
  */
 export const createFragment = (schema: string) => {
     const matches = schema.match(extractFragment)
@@ -565,7 +609,7 @@ export const createFragment = (schema: string) => {
     return fragments
 }
 
-export type ToSelectiveFragment<T extends Record<string, unknown>> = {
+type ToSelectiveFragment<T extends Record<string, unknown>> = {
     [K in keyof T]: T[K] extends Record<string, unknown>
         ? ToSelectiveFragment<T[K]>
         : true

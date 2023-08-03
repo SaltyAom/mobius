@@ -1,6 +1,6 @@
 {
   "name": "graphql-mobius",
-  "version": "0.0.0",
+  "version": "0.0.0-exp.0",
   "description": "End-to-end type safe TypeScript GraphQL Client",
   "author": {
     "name": "saltyAom",
@@ -10,8 +10,8 @@
   "main": "./dist/index.js",
   "exports": {
     "bun": "./dist/index.js",
-    "node": "./dist/cjs/index.js",
-    "require": "./dist/cjs/index.js",
+    "node": "./dist/index.js",
+    "require": "./dist/index.js",
     "import": "./dist/index.js",
     "default": "./dist/index.js"
   },
@@ -31,10 +31,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "bun run --hot example/index.ts",
-    "test": "bun wiptest && npm run test:node",
+    "test": "bun wiptest && npm run test:types",
     "test:types": "tsc --project tsconfig.test.json",
-    "test:node": "npm install --prefix ./test/node/cjs/ && npm install --prefix ./test/node/esm/ && node ./test/node/cjs/index.js && node ./test/node/esm/index.js",
-    "build": "rimraf dist && tsc --project tsconfig.esm.json && tsc --project tsconfig.cjs.json",
+    "build": "rimraf dist && bun build.ts",
     "release": "npm run build && npm run test && npm publish --access public",
     "trace": "tsc --generateTrace ./trace --incremental false"
   },
@@ -58,7 +57,7 @@
     "eslint": "^8.40.0",
     "expect-type": "^0.16.0",
     "rimraf": "4.4.1",
-    "typescript": "5.0"
+    "typescript": "^5.1.6"
   },
   "peerDependenciesMeta": {
     "graphql": {

@@ -4,6 +4,7 @@
 .cjs.swcrc
 .es.swcrc
 bun.lockb
+build.ts
 
 node_modules
 tsconfig.json
@@ -13,8 +14,10 @@ nodemon.json
 
 example
 tests
+trace
 test
 CHANGELOG.md
 .eslintrc.js
 tsconfig.cjs.json
 tsconfig.esm.json
+tsconfig.test.json
