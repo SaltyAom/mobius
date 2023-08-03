@@ -15,6 +15,29 @@ Mobius can parse GraphQL schema to TypeScript to create End-to-end type safe Gra
 Made possible by Template Literal and various dark magic.
 
 Known Caveat:
+- **Type must be order from top-to-bottom like TypeScript**
+    - This means before using the type, it must be defined first
+    ```ts
+    // ✅ This works
+    type A {
+        A: String!
+    }
+
+    type B {
+        A: String!
+        B: B!
+    }
+
+    // ❌ This not
+    type B {
+        A: String!
+        B: B!
+    }
+
+    type A {
+        A: String!
+    }
+    ```
 - Directive should be top-level (but not required)
 - Nested fragment is not supported
 - TypeScript has limited total stack, pass around ~8-9 locs / 14k generated around ~900 types (compacted, only types)
