@@ -32,6 +32,7 @@
   "scripts": {
     "dev": "bun run --hot example/index.ts",
     "test": "bun wiptest && npm run test:node",
+    "test:types": "tsc --project tsconfig.test.json",
     "test:node": "npm install --prefix ./test/node/cjs/ && npm install --prefix ./test/node/esm/ && node ./test/node/cjs/index.js && node ./test/node/esm/index.js",
     "build": "rimraf dist && tsc --project tsconfig.esm.json && tsc --project tsconfig.cjs.json",
     "release": "npm run build && npm run test && npm publish --access public",
@@ -55,6 +56,7 @@
     "bun-types": "^0.7.0",
     "elysia": "^0.6.0-alpha.4",
     "eslint": "^8.40.0",
+    "expect-type": "^0.16.0",
     "rimraf": "4.4.1",
     "typescript": "5.0"
   },

@@ -63,6 +63,8 @@ const mobius = new Mobius<typeof typeDefs, Scalar>({
     fetch
 })
 
+export type T = typeof mobius['mobius']
+
 const { ABCFrag } = mobius.fragments!
 
 const a = await mobius.query({
@@ -78,5 +80,3 @@ const a = await mobius.query({
         }
     }
 })
-
-console.log(a.query)

@@ -19,7 +19,4 @@ Caveat:
 - Directive should be top-level
 - Nested Query is not supported
 - Directive should be top-level 
-- TypeScript Template Literal is greedy, and can't fit many comments atm
-- Can read around ~9000 locs and limited to around ~900 types
-
-** This is not expected to use on production, yet.**
+- TypeScript has it own limitation for nested types, tested around ~8000 locs (compacted, only types) and limited to around ~900 types

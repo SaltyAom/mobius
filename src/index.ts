@@ -121,18 +121,17 @@ type CreateInnerMobius<
                                         : {})
                             >
                         }
-                      : Keyword extends 'input' | 'mutation' | 'interface'
+                      : Keyword extends 'input' | 'interface'
                       ? {
-                            [name in TrimLeft<Name>]: Exclude<
-                                MapSchema<RemoveComment<Schema>>,
-                                null
+                            [name in TrimLeft<Name>]: Prettify<
+                                MapSchema<RemoveComment<Schema>>
                             >
                         }
                       : Keyword extends 'enum'
                       ? {
                             [name in TrimLeft<Name>]: Exclude<
-                                MapEnum<RemoveComment<Schema>>,
-                                null
+                                NonNullable<MapEnum<RemoveComment<Schema>>>,
+                                ''
                             >
                         }
                       : Keyword extends 'fragment'
@@ -163,7 +162,7 @@ type CreateInnerMobius<
                             `${TrimLeft<
                                 GetLastLine<Ops>
                             >}{${RemoveComment<Schema>}}`,
-                            Scalar,
+                            Scalars,
                             Known
                         >
                       : Keyword extends 'union'
@@ -172,10 +171,24 @@ type CreateInnerMobius<
                             `${TrimLeft<
                                 GetLastLine<Ops>
                             >}{${RemoveComment<Schema>}}`,
-                            Scalar,
+                            Scalars,
                             Known & MapUnion<Ops, Scalars & Known>
                         >
-                      : {})
+                      : /**
+                       * ? TypeScript is greedy, scalar can eat other word until
+                       * ? next bracket match which means types left over is possible
+                       **/
+                      Keyword extends 'scalar'
+                      ? TrimLeft<
+                            RemoveComment<Ops>
+                        > extends `${infer _}\n${infer Prefix}`
+                          ? CreateInnerMobius<
+                                `${Prefix}{${Schema}}`,
+                                Scalars,
+                                Known
+                            >
+                          : {}
+                      : Known)
           >
         : Known
     : Known
