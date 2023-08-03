@@ -192,7 +192,7 @@ new Mobius({
 
 // Using native fetch
 new Mobius({
-    fetch: (query) => fetch('https://www.learnwithjason.dev/graphql', {
+    fetch: (query) => fetch('https://saltyaom.com/graphql', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
