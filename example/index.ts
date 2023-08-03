@@ -51,29 +51,29 @@ type Scalar = {
 
 const client = new Client<typeof schema, Scalar>('::1')
 
-client.mobius.Frag
+client.mobius.Fragment
 
 const a = await client.$({
-    "query": {
-        "Hi": {
-            "where": {
-                "cdef": "E"
+    query: {
+        Hi: {
+            where: {
+                cdef: 'E'
             },
-            "select": {
-                "A": true,
-                "D": {
-                    'nested': true
+            select: {
+                A: true,
+                D: {
+                    nested: true
                 }
             }
         },
-        'Hello': {
-            'select': {
-                'B': true
+        Hello: {
+            select: {
+                B: true
             },
-            'where': {
-                'word': "Hello World",
-                'again': {
-                    'nested': "s"
+            where: {
+                word: 'Hello World',
+                again: {
+                    nested: 's'
                 }
             }
         }

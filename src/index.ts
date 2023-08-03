@@ -131,18 +131,23 @@ type CreateMobius<
                         }
                       : Keyword extends 'fragment'
                       ? {
-                            [name in Trim<FirstWord<Name>>]: Prettify<
-                                Name extends `${infer _} on ${infer Target}`
-                                    ? Target extends keyof Known
-                                        ? Pick<
-                                              Known[Target],
-                                              NonNullable<
-                                                  Exclude<MapEnum<Schema>, ''>
+                            Fragment: {
+                                [name in Trim<FirstWord<Name>>]: Prettify<
+                                    Name extends `${infer _} on ${infer Target}`
+                                        ? Target extends keyof Known
+                                            ? Pick<
+                                                  Known[Target],
+                                                  NonNullable<
+                                                      Exclude<
+                                                          MapEnum<Schema>,
+                                                          ''
+                                                      >
+                                                  >
                                               >
-                                          >
+                                            : {}
                                         : {}
-                                    : {}
-                            >
+                                >
+                            }
                         }
                       : Keyword extends 'directive'
                       ? CreateMobius<
@@ -318,6 +323,11 @@ export type Mobius<
                   ? {}
                   : {
                         Subscription: {}
+                    }) &
+              ('Fragment' extends keyof Typed
+                  ? {}
+                  : {
+                        Fragment: {}
                     })
       >
     : never
