@@ -1,6 +1,6 @@
 import { Mobius } from '../src'
 
-const schema = /* GraphQL */ `
+const typeDefs = /* GraphQL */ `
     scalar Date
     scalar Time
 
@@ -223,7 +223,7 @@ const schema = /* GraphQL */ `
 
 const mobius = new Mobius({
     url: 'https://seele.hifumin.app/graphql',
-    typeDefs: schema
+    typeDefs
 })
 
 mobius.query({
@@ -244,7 +244,7 @@ mobius.query({
     }
 })
 
-const response = await mobius.query({
+const response = mobius.query({
     nhql: {
         by: {
             where: {
