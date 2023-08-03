@@ -14,10 +14,6 @@ type TrimRight<V extends string> = V extends `${infer R}${Whitespace}`
 
 type Trim<V extends string> = TrimLeft<TrimRight<V>>
 
-type FirstWord<T extends string> = T extends `${infer A}${Whitespace}${infer _}`
-    ? A
-    : T
-
 type Split<
     S extends string,
     Delimiter extends string
@@ -26,6 +22,16 @@ type Split<
     : S extends Delimiter
     ? []
     : [S]
+
+type GetLastLine<S extends string> = S extends `${infer Head}\n${infer Tail}`
+    ? GetLastLine<Tail>
+    : S extends '\n'
+    ? []
+    : S
+
+type FirstWord<T extends string> = T extends `${infer A}${Whitespace}${infer _}`
+    ? A
+    : T
 
 type Prettify<T> = {
     [K in keyof T]: T[K]
@@ -67,20 +73,20 @@ type MergeInterface<
               ? Known[Key]
               : never)
 
-// ? I'm even sure why this work, I just bruteforce
-export type RemoveComment<
-    T extends string,
-    Carry extends string = T
-> = T extends `${infer First}#${infer Comment}\n${infer Rest}`
-    ? `${First}${RemoveComment<Rest, Comment>}`
-    : RemoveMultilineComment<T>
+export type RemoveComment<T extends string> = RemoveMultiLineComment<
+    RemoveSingleLineComment<T>
+>
 
-export type RemoveMultilineComment<
-    T extends string,
-    Carry extends string = T
-> = T extends `${infer First}"""${infer Comment}"""${infer Rest}`
-    ? `${First}${RemoveMultilinreComment<Comment, RemoveComment<Rest>>}`
-    : Carry
+// ? I'm even sure why this work, I just bruteforce
+type RemoveSingleLineComment<T extends string> =
+    T extends `${infer First}#${infer Comment}\n${infer Rest}`
+        ? `${First}${RemoveSingleLineComment<Rest>}`
+        : T
+
+export type RemoveMultiLineComment<T extends string> =
+    T extends `${infer First}"""${infer Comment}"""${infer Rest}`
+        ? `${First}${RemoveMultiLineComment<Rest>}`
+        : T
 
 type CreateMobius<
     T extends string,
@@ -112,6 +118,10 @@ type CreateMobius<
                       ? {
                             [name in Trim<Name>]: Exclude<MapEnum<Schema>, null>
                         }
+                      : Keyword extends 'directive'
+                      ? CreateMobius<`${Trim<
+                            GetLastLine<Ops>
+                        >}{${Schema}}${Rest}`>
                       : {})
           >
         : Known
@@ -252,7 +262,13 @@ export type Mobius<
 type Selective<T> = T extends object
     ? {
           [K in keyof T]?: K extends 'where' ? T[K] : Selective<T[K]>
-      }
+      } & ('where' extends keyof T
+          ? T['where'] extends NonNullable<T['where']>
+              ? {
+                    where: T['where']
+                }
+              : {}
+          : {})
     : T
 
 type MaybeArray<T> = T | T[]
@@ -389,7 +405,7 @@ export class Client<
     }
 
     query<Query extends Selective<CreateQuery<TypeDefs['Query']>>>(params: {
-        query?: Query
+        query: Query
     }): Promise<
         Prettify<
             {} extends Query ? {} : Resolve<Query, TypeDefs['Query'] & Scalars>
@@ -401,7 +417,7 @@ export class Client<
     mutate<
         Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>
     >(params: {
-        mutate?: Mutate
+        mutate: Mutate
     }): Promise<
         Prettify<
             {} extends Mutate
@@ -415,7 +431,7 @@ export class Client<
     subscription<
         Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
     >(params: {
-        mutate?: Subscription
+        mutate: Subscription
     }): Promise<
         Prettify<
             {} extends Subscription

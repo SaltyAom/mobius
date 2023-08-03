@@ -1,41 +1,54 @@
-import Client, { RemoveMultilineComment } from '../src'
+import Client, { RemoveComment, RemoveMultiLineComment } from '../src'
 
 const schema = /* GraphQL */ `
-    interface B {
-        B: String!
+    directive @deprecated(
+        reason: String = "No longer supported"
+    ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE
+
+    directive @deprecated(
+        reason: String = "No longer supported"
+    ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE
+
+    type A {
+        hello: String!
     }
 
-    interface C {
-        C: String!
+    type B {
+        hello: String!
     }
 
-    """
-    Hello World
-    """
-    type A implements B, C {
-        # Here
-        hello: String! @possibleTypes(concreteTypes: ["EnterpriseAdministratorInvitation"])
-        # There
-        world: String!
+    union AB = A | B
+
+    type C {
+        hello: String!
     }
 
-    """
-    Hello World
-    """
     type D {
         hello: String!
     }
 
-    type E {
-        hello: String!
-    }
-
     type Query {
-        getHello(id: String!, e: E!): A!
+        Hi(A: String!, W: String!): D!
     }
 `
 
+type A = RemoveComment<typeof schema>
+
 const client = new Client<typeof schema>('::1')
+
+client.query({
+    query: {
+        Hi: {
+            select: {
+                hello: true
+            },
+            where: {
+                A: 'Hello',
+                W: 'A'
+            }
+        }
+    }
+})
 
 // const result = await client.$({
 //     query: {
