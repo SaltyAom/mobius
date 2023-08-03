@@ -8,17 +8,22 @@ const typeDefs = /* GraphQL */ `
         A: String!
     }
 
+    # Hello World
     fragment Frag on A {
         A
     }
 
+    # Hello World
     enum CD {
         C
         D
     }
 
+    # Hello World
     enum EF {
+        # Hello World
         E
+        # Hello World
         F
     }
 
@@ -35,7 +40,6 @@ const typeDefs = /* GraphQL */ `
         D: D!
     }
 
-    # This is C | D | E | F
     union CDEF = CD | EF
     union ABC = B | C
 

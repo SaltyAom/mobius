@@ -104,15 +104,18 @@ type CreateInnerMobius<
     Scalars extends Scalar = {},
     Known extends CustomTypes = {}
 > = T extends `${infer Ops}{${infer Schema}}${infer Rest}`
-    ? Trim<Ops> extends `${infer Keyword} ${infer Name}`
+    ? Trim<RemoveComment<Ops>> extends `${infer Keyword} ${infer Name}`
         ? CreateInnerMobius<
               Rest,
               Scalars,
               Known &
                   (Keyword extends 'type'
                       ? {
-                            [name in Trim<FirstWord<Name>>]: Prettify<
-                                MapSchema<Schema, Known & Scalars> &
+                            [name in TrimLeft<FirstWord<Name>>]: Prettify<
+                                MapSchema<
+                                    RemoveComment<Schema>,
+                                    Known & Scalars
+                                > &
                                     (Name extends `${infer _} implements ${infer Interfaces}`
                                         ? MergeInterface<Interfaces, Known>
                                         : {})
@@ -120,26 +123,31 @@ type CreateInnerMobius<
                         }
                       : Keyword extends 'input' | 'mutation' | 'interface'
                       ? {
-                            [name in Trim<Name>]: Exclude<
-                                MapSchema<Schema>,
+                            [name in TrimLeft<Name>]: Exclude<
+                                MapSchema<RemoveComment<Schema>>,
                                 null
                             >
                         }
                       : Keyword extends 'enum'
                       ? {
-                            [name in Trim<Name>]: Exclude<MapEnum<Schema>, null>
+                            [name in TrimLeft<Name>]: Exclude<
+                                MapEnum<RemoveComment<Schema>>,
+                                null
+                            >
                         }
                       : Keyword extends 'fragment'
                       ? {
                             Fragment: {
-                                [name in Trim<FirstWord<Name>>]: Prettify<
+                                [name in TrimLeft<FirstWord<Name>>]: Prettify<
                                     Name extends `${infer _} on ${infer Target}`
                                         ? Target extends keyof Known
                                             ? Pick<
                                                   Known[Target],
                                                   NonNullable<
                                                       Exclude<
-                                                          MapEnum<Schema>,
+                                                          MapEnum<
+                                                              RemoveComment<Schema>
+                                                          >,
                                                           ''
                                                       >
                                                   >
@@ -152,14 +160,18 @@ type CreateInnerMobius<
                       : Keyword extends 'directive'
                       ? CreateInnerMobius<
                             // ? TypeScript is greedy
-                            `${Trim<GetLastLine<Ops>>}{${Schema}}`,
+                            `${TrimLeft<
+                                GetLastLine<Ops>
+                            >}{${RemoveComment<Schema>}}`,
                             Scalar,
                             Known
                         >
                       : Keyword extends 'union'
                       ? CreateInnerMobius<
                             // ? TypeScript is greedy
-                            `${Trim<GetLastLine<Ops>>}{${Schema}}`,
+                            `${TrimLeft<
+                                GetLastLine<Ops>
+                            >}{${RemoveComment<Schema>}}`,
                             Scalar,
                             Known & MapUnion<Ops, Scalars & Known>
                         >
@@ -306,7 +318,7 @@ type MapArgument<
 export type CreateMobius<
     T extends string,
     Scalars extends Scalar = {}
-> = CreateInnerMobius<RemoveComment<T>, Scalars> extends infer Typed
+> = CreateInnerMobius<T, Scalars> extends infer Typed
     ? Prettify<
           Typed &
               ('Query' extends keyof Typed
@@ -579,9 +591,7 @@ export class Mobius<
     $<
         Query extends Selective<CreateQuery<TypeDefs['Query']>> = {},
         Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>> = {},
-        Subscription extends Selective<
-            CreateQuery<TypeDefs['Subscription']>
-        >
+        Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
     >(params: {
         query?: Query
         mutate?: Mutate
@@ -661,9 +671,7 @@ export class Mobius<
     }
 
     subscription<
-        Subscription extends Selective<
-            CreateQuery<TypeDefs['Subscription']>
-        >
+        Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
     >(
         params: Subscription
     ): {
