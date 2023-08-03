@@ -1,6 +1,6 @@
 {
   "name": "graphql-mobius",
-  "version": "0.0.0-exp.1",
+  "version": "0.0.0-exp.2",
   "description": "End-to-end type safe TypeScript GraphQL Client",
   "author": {
     "name": "saltyAom",
@@ -30,7 +30,7 @@
   "bugs": "://github.com/SaltyAom/mobius/issues",
   "license": "MIT",
   "scripts": {
-    "dev": "bun run --hot example/index.ts",
+    "dev": "bun run --watch example/index.ts",
     "test": "bun wiptest && npm run test:types",
     "test:types": "tsc --project tsconfig.test.json",
     "build": "rimraf dist && bun build.ts",

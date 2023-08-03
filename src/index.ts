@@ -629,6 +629,7 @@ export class Mobius<
 
     constructor(
         public config?: {
+            url?: string
             fetch?: (query: string) => Promise<unknown>
             typeDefs?: Declaration
         }
@@ -637,7 +638,20 @@ export class Mobius<
     }
 
     protected get fetch() {
-        return this.config.fetch
+        return (
+            this.config?.fetch ??
+            ((query: string) =>
+                fetch(this.config?.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query,
+                        variables: {}
+                    })
+                }).then((x) => x.json()))
+        )
     }
 
     $<

@@ -78,13 +78,14 @@ const typeDefs = `
 `
 
 const mobius = new Mobius<typeof typeDefs>({
-    fetch: urql.query
+    // Using Mobius default fetch client
+    url: 'https://api.saltyaom.com/graphql'
 })
 
 // This is also fine, if you don't care about TypeDefs being available on client-side
 const mobius2 = new Mobius({
-    typeDefs,
-    fetch: urql.query
+    url: 'https://api.saltyaom.com/graphql'
+    typeDefs
 })
 
 // Call query to execute query
@@ -155,6 +156,44 @@ client.mobius
 
 If scalars isn't provided but is defined in GraphQL anyway, it should resolved as **unknown**
 
+## Fragment
+You use use `mobius.fragment` **if you provided typeDefs as literal code**
+
+Fragment syntax works like rest parameters which looks like GraphQL fragment syntax.
+
+```ts
+const typeDefs = `
+    interface A {
+        A: String!
+        B: String!
+        C: String!
+        D: String!
+    }
+
+    fragment APart on A {
+        A
+        B
+    }
+
+    type Query {
+        GetA: A!
+    }
+`
+
+const mobius = new Mobius({
+    typeDefs
+})
+
+const { APart } = mobius.fragments!
+
+mobius.query({
+    GetA: {
+        ...APart,
+        C: true
+    }
+})
+```
+
 ## Utility type
 For framework, and library author.
 
@@ -213,9 +252,9 @@ new Mobius({
     fetch: urql.query
 })
 
-// Using native fetch
+// Using native fetch (default)
 new Mobius({
-    fetch: (query) => fetch('https://saltyaom.com/graphql', {
+    fetch: (query) => fetch(this.config.url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -229,7 +268,7 @@ new Mobius({
 })
 ```
 
-The library that you want to query GraphQL to use with Mobius is your choice, as Mobius doesn't provided one for you (to be as simple as possible)
+The library that you want to query GraphQL to use with Mobius is your choice, it's designed to be that way.
 
 ---
 
