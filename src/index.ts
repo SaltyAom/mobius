@@ -581,7 +581,7 @@ export class Mobius<
         Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>> = {},
         Subscription extends Selective<
             CreateQuery<TypeDefs['Subscription']>
-        > = {}
+        >
     >(params: {
         query?: Query
         mutate?: Mutate
@@ -624,7 +624,7 @@ export class Mobius<
         }
     }
 
-    query<const Query extends Selective<CreateQuery<TypeDefs['Query']>> = {}>(
+    query<Query extends Selective<CreateQuery<TypeDefs['Query']>>>(
         params: Query
     ): {
         query: string
@@ -640,7 +640,7 @@ export class Mobius<
         }
     }
 
-    mutate<Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>> = {}>(
+    mutate<Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>>(
         params: Mutate
     ): {
         mutate: string
@@ -663,7 +663,7 @@ export class Mobius<
     subscription<
         Subscription extends Selective<
             CreateQuery<TypeDefs['Subscription']>
-        > = {}
+        >
     >(
         params: Subscription
     ): {
