@@ -25,13 +25,13 @@ Known Caveat:
 
     type B {
         A: String!
-        B: B!
+        B: A!
     }
 
     // ❌ This not
     type B {
         A: String!
-        B: B!
+        B: A!
     }
 
     type A {
