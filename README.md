@@ -14,7 +14,7 @@ Mobius can parse GraphQL schema to TypeScript to create End-to-end type safe Gra
 
 Made possible by Template Literal and various dark magic.
 
-Known Caveat:
+### Known Caveat:
 - **Type must be order from top-to-bottom like TypeScript**
     - This means before using the type, it must be defined first
     ```ts
