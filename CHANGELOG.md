@@ -1,3 +1,8 @@
+# 0.1.3 - 5 Aug 2023
+Bug fix:
+- Unwrap query parameters
+- Inline Err
+
 # 0.1.2 - 5 Aug 2023
 Bug fix:
 - Query nullable array

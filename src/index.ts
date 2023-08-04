@@ -430,7 +430,7 @@ type ResolveKey<
     Scalars extends Record<string, unknown>
 > = K extends (p: infer Params) => infer Returned
     ? {
-          [K in keyof Params]: ResolveKey<
+          [K in keyof Params]: UnwrapKey<
               // @ts-ignore: Trust me bro
               NonNullable<Params[K]>,
               Result,
@@ -447,7 +447,7 @@ type ResolveKey<
     ? Scalars[K]
     : K extends keyof Result
     ? Result[K]
-    : Err<["Couldn't resolve the key ", K]>
+    : unknown // Err<["Couldn't resolve the key ", K]>
 
 interface ResolveInnerType<
     Data extends Record<string, unknown | Record<string, MData>>,
