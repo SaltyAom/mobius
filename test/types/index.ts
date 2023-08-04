@@ -449,6 +449,7 @@ import { Mobius, type CreateMobius } from '../../src'
     >
 
     expectTypeOf<R>().toEqualTypeOf<{
+        Date: Date
         A: {
             A: string
             B: Date
