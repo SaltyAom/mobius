@@ -286,7 +286,7 @@ import { Mobius, type CreateMobius } from '../../src'
                 B: number
             }
             B: (p: {
-                name?: string | null
+                name?: string
                 A: {
                     A: string
                     B: number
@@ -338,11 +338,11 @@ import { Mobius, type CreateMobius } from '../../src'
                 B: number
             }
             B: (p?: {
-                name?: string | null
+                name?: string
                 A?: {
                     A: string
                     B: number
-                } | null
+                }
             }) => {
                 A: string
                 B: string
@@ -449,6 +449,7 @@ import { Mobius, type CreateMobius } from '../../src'
     >
 
     expectTypeOf<R>().toEqualTypeOf<{
+        Date: Date
         A: {
             A: string
             B: Date
@@ -799,6 +800,7 @@ import { Mobius, type CreateMobius } from '../../src'
     type R = CreateMobius<typeof typeDefs, Scalar>
 
     expectTypeOf<R>().toEqualTypeOf<{
+        Date: Date
         A: {
             A: string
         }
@@ -806,7 +808,6 @@ import { Mobius, type CreateMobius } from '../../src'
             Frag: {
                 A: string
             }
-        } & {
             ABCFrag: {
                 A: string
                 B: string
@@ -872,7 +873,7 @@ import { Mobius, type CreateMobius } from '../../src'
                 }
             },
             where: {
-                cdef: 'D'
+                cdef: 'D',
             }
         }
     })

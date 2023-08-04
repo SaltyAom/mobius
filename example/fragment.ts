@@ -32,5 +32,3 @@ const a = await mobius.query({
 })
 
 const response = await a.result
-
-response?.GetA.B

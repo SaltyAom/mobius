@@ -1,30 +1,26 @@
-import { Mobius } from '../src'
+import { Mobius, type CreateInnerMobius } from '../src'
 
 const typeDefs = /* GraphQL */ `
-    # Hello World
-    type A {
-        A: String!
-        B: String!
+    interface B {
+        C: String!
+        D: String!
+        B: [B!]!
     }
 
     # Hello World
     type Query {
-        Hello(word: String!): A!
+        Hello(word: String!): B!
     }
 `
 
 const mobius = new Mobius<typeof typeDefs>()
 
-const { result } = mobius.query({
-    Hello: {
-        where: {
-            word: 'Hi'
-        },
-        select: {
-            A: true
-        }
-    }
-})
+type B = {
+    A: 'A!'
+    B: 'B!'
+}
 
-const response = await result
-response?.Hello.A
+mobius.klein?.Query
+
+// const response = await result
+// response?.Hello.A
