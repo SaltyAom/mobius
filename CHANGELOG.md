@@ -1,3 +1,7 @@
+# 0.1.1 - 5 Aug 2023
+Bug fix:
+- Query nullable array
+
 # 0.1.0 - 5 Aug 2023
 Feature:
 - Support backward, and circular type thanks to @ggrandi04

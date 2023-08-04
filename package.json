@@ -1,6 +1,6 @@
 {
   "name": "graphql-mobius",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "End-to-end type safe TypeScript GraphQL Client",
   "author": {
     "name": "saltyAom",

@@ -499,7 +499,7 @@ export type CreateQuery<T extends Record<string, unknown>> =
     (NonNullable<T> extends infer T
         ? {
               [K in keyof T]: T[K] extends (_: infer Params) => infer Query
-                  ? UnwrapArray<NonNullable<Query>> extends Record<
+                  ? NonNullable<UnwrapArray<Query>> extends Record<
                         string,
                         unknown
                     >

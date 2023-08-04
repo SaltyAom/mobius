@@ -1145,4 +1145,8 @@ import Mobius from '../src'
 
 const mobius = new Mobius<typeof typeDefs, Scalars>()
 
-mobius.klein?.RocketSecondStage.payloads?.composite_fairing?.diameter?.meters
+mobius.query({
+  "missions": {
+    "select": true
+  }
+})

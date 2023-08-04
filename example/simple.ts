@@ -9,7 +9,7 @@ const typeDefs = /* GraphQL */ `
 
     # Hello World
     type Query {
-        Hello(word: String!): B!
+        Hello(word: String!): [B]
     }
 `
 
@@ -21,6 +21,12 @@ type B = {
 }
 
 mobius.klein?.Query
+
+mobius.query({
+    "Hello": {
+        "select": true
+    }
+})
 
 // const response = await result
 // response?.Hello.A
