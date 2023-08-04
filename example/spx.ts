@@ -1146,7 +1146,4 @@ import Mobius from '../src'
 const mobius = new Mobius<typeof typeDefs, Scalars>()
 
 mobius.query({
-  "missions": {
-    "select": true
-  }
 })

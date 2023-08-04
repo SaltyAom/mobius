@@ -23,8 +23,13 @@ type B = {
 mobius.klein?.Query
 
 mobius.query({
-    "Hello": {
-        "select": true
+    Hello: {
+        select: {
+            C: true
+        },
+        where: {
+            word: 'A'
+        }
     }
 })
 
