@@ -5,9 +5,12 @@
  * ! Dark art ahead
  *
  * ? Total hours wasted by this: 0
+ * ? Please send PR to update ^
  *
  * @author saltyAom
  */
+
+type Defer<T> = { __defer: T }
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 type Whitespace =
@@ -104,6 +107,16 @@ type RemoveMultiLineComment<T extends string> =
         ? `${First}${RemoveMultiLineComment<Rest>}`
         : T
 
+// Name extends keyof T
+//     ? K extends {
+//           __defer: infer Eager extends [Defer<string>]
+//       }
+//         ? T & {
+//               __defer: Eager
+//           }
+//         : T
+//     : T
+
 type CreateInnerMobius<
     T extends string,
     Scalars extends Scalar = {},
@@ -118,6 +131,7 @@ type CreateInnerMobius<
                       ? {
                             [name in TrimLeft<FirstWord<Name>>]: Prettify<
                                 MapSchema<
+                                    name,
                                     RemoveComment<Schema>,
                                     Known & Scalars
                                 > &
@@ -125,11 +139,25 @@ type CreateInnerMobius<
                                         ? MergeInterface<Interfaces, Known>
                                         : {})
                             >
-                        }
+                        } extends infer A
+                          ? Name extends keyof A
+                              ? A[Name] extends {
+                                    [k in `__defer${string}`]: infer Eager extends string
+                                }
+                                  ? A & {
+                                        __defer: Eager
+                                    }
+                                  : A
+                              : A
+                          : never
                       : Keyword extends 'input' | 'interface'
                       ? {
                             [name in TrimLeft<Name>]: Prettify<
-                                MapSchema<RemoveComment<Schema>>
+                                MapSchema<
+                                    name,
+                                    RemoveComment<Schema>,
+                                    Known & Scalars
+                                >
                             >
                         }
                       : Keyword extends 'enum'
@@ -235,6 +263,7 @@ type MapEnum<
     : Carry
 
 type MapSchema<
+    SchemaName extends string,
     T extends string,
     Known extends CustomTypes = {}
 > = T extends `${infer Name}:${infer Type}`
@@ -244,32 +273,58 @@ type MapSchema<
                   infer Type extends string,
                   infer Rest extends string
               ]
-                ? {
-                      [word in Name as TrimLeft<Name> extends infer Candidate extends string
-                          ? Candidate extends `#${infer _}`
-                              ? never
-                              : Candidate
-                          : never]: Prettify<
-                          MapArgument<Params, Known>
-                      > extends infer Argument
-                          ? Partial<Argument> extends Argument
-                              ? (p?: Argument) => MapType<Type, Known>
-                              : (p: Argument) => MapType<Type, Known>
-                          : never
-                  } & MapSchema<Rest, Known>
+                ? (MapType<
+                      `${SchemaName}.${TrimLeft<Name>}`,
+                      Type,
+                      Known
+                  > extends infer Typed
+                      ? {
+                            [word in Name as TrimLeft<Name> extends infer Candidate extends string
+                                ? Candidate extends `#${infer _}`
+                                    ? never
+                                    : Candidate
+                                : never]: Prettify<
+                                MapArgument<SchemaName, Params, Known>
+                            > extends infer Argument
+                                ? Partial<Argument> extends Argument
+                                    ? (p?: Argument) => Typed
+                                    : (p: Argument) => Typed
+                                : never
+                        } & (NonNullable<Typed> extends Defer<
+                            infer A extends string
+                        >
+                            ? {
+                                  [K in `__defer${Name}`]: A
+                              }
+                            : {})
+                      : {}) &
+                      MapSchema<SchemaName, Rest, Known>
                 : {}
             : {}
         : ExtractType<Type> extends [
               infer Type extends string,
               infer Rest extends string
           ]
-        ? {
-              [word in Name as TrimLeft<Name>]: MapType<Type, Known>
-          } & MapSchema<Rest, Known>
+        ? (MapType<`${SchemaName}.${TrimLeft<Name>}`, Type, Known> extends infer Typed
+              ? {
+                    [word in Name as TrimLeft<Name>]: Typed
+                } & (NonNullable<Typed> extends Defer<infer A extends string>
+                    ? {
+                          // ? Non Collision container
+                          [K in `__defer${Name}`]: A
+                      }
+                    : {})
+              : {}) &
+              MapSchema<SchemaName, Rest, Known>
         : {}
     : {}
 
-type MapType<T extends string, Known extends CustomTypes = {}> = MapInnerType<
+type MapType<
+    SchemaName extends string,
+    T extends string,
+    Known extends CustomTypes = {}
+> = MapInnerType<
+    SchemaName,
     FirstWord<T> extends `${infer Type}!` ? Type : T,
     Known
 > extends infer Type
@@ -280,38 +335,45 @@ type MapType<T extends string, Known extends CustomTypes = {}> = MapInnerType<
         : Type | null
     : unknown
 
-type MapInnerType<T extends string, Known extends CustomTypes = {}> = GQLTypes &
-    Known extends infer Types
+type MapInnerType<
+    SchemaName extends string,
+    T extends string,
+    Known extends CustomTypes = {}
+> = GQLTypes & Known extends infer Types
     ? T extends keyof Types
         ? Types[T]
         : T extends `[${infer InnerType}!]`
         ? InnerType extends keyof Types
             ? Types[InnerType][]
-            : unknown[]
+            : Defer<`${SchemaName}.${T}`>
         : T extends `[${infer InnerType}]`
         ? InnerType extends keyof Types
             ? (Types[InnerType] | null)[]
-            : unknown[]
-        : unknown
+            : Defer<`${SchemaName}.${T}`>
+        : Defer<`${SchemaName}.${T}`>
     : never
 
 type MapArgument<
+    SchemaName extends string,
     T extends string,
     Known extends CustomTypes = {},
     Carry extends Record<string, unknown> = {}
 > = T extends `${infer Name}:${infer Type}${'\n' | ','}${infer Rest}`
     ? MapArgument<
+          SchemaName,
           Rest,
           Known,
           Type extends `${infer _}!${infer _}`
               ? Carry & {
                     [name in TrimLeft<Name>]: MapType<
+                        `${SchemaName}.${Name}`,
                         FirstWord<TrimLeft<Type>>,
                         Known
                     >
                 }
               : Carry & {
                     [name in TrimLeft<Name>]?: MapType<
+                        `${SchemaName}.${Name}`,
                         FirstWord<TrimLeft<Type>>,
                         Known
                     >
@@ -321,12 +383,14 @@ type MapArgument<
     ? Type extends `${infer _}!${infer _}`
         ? Carry & {
               [name in TrimLeft<Name>]: MapType<
+                  `${SchemaName}.${Name}`,
                   FirstWord<TrimLeft<Type>>,
                   Known
               >
           }
         : Carry & {
               [name in TrimLeft<Name>]?: MapType<
+                  `${SchemaName}.${Name}`,
                   FirstWord<TrimLeft<Type>>,
                   Known
               >
