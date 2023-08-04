@@ -298,6 +298,24 @@ const response = mobius.query({
                 data: {
                     title: {
                         display: true
+                    },
+                    related: {
+                        select: {
+                            title: {
+                                display: true
+                            },
+                            related: {
+                                select: {
+                                    id: true
+                                },
+                                where: {
+                                    channel: 'HIFUMIN_FIRST'
+                                }
+                            }
+                        },
+                        where: {
+                            channel: 'HIFUMIN_FIRST'
+                        }
                     }
                 }
             }

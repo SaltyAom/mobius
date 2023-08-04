@@ -109,7 +109,7 @@ type RemoveMultiLineComment<T extends string> =
         ? `${First}${RemoveMultiLineComment<Rest>}`
         : T
 
-type CreateInnerMobius<
+export type CreateInnerMobius<
     T extends string,
     Known extends CustomTypes = {}
 > = T extends `${infer Ops}{${infer Schema}}${infer Rest}`
@@ -430,8 +430,8 @@ type ResolveKey<
           >
       } extends infer Argument
         ? Partial<Argument> extends Argument
-            ? (p?: Argument) => ResolveKey<Returned, Result, Scalars>
-            : (p: Argument) => ResolveKey<Returned, Result, Scalars>
+            ? (p?: Argument) => UnwrapKey<Returned, Result, Scalars>
+            : (p: Argument) => UnwrapKey<Returned, Result, Scalars>
         : never
     : K extends keyof Scalars
     ? Scalars[K]
@@ -484,28 +484,32 @@ type UnwrapArray<T> = T extends Array<infer R>
 /**
  * Create Prisma-like argument syntax for Client
  */
-export type CreateQuery<T extends Record<string, unknown>> = {
-    [K in keyof T]: T[K] extends (_: infer Params) => infer Query
-        ? UnwrapArray<Query> extends Record<string, unknown>
-            ? {
-                  select: CreateQuery<UnwrapArray<Query>>
-                  where: Params
-              }
-            : {
-                  select: true | undefined | null
-                  where: T[K] extends (_: infer Params) => any ? Params : never
-              }
-        : NonNullable<UnwrapArray<T[K]>> extends infer Query extends Record<
-              string,
-              unknown
-          >
-        ? {} extends UnwrapArray<Query>
-            ? true | undefined | null
-            : CreateQuery<UnwrapArray<Query>>
-        : true | undefined | null
-} & {
-    __typename?: true | undefined | null
-}
+export type CreateQuery<T extends Record<string, unknown>> =
+    (NonNullable<T> extends infer T
+        ? {
+              [K in keyof T]: T[K] extends (_: infer Params) => infer Query
+                  ? UnwrapArray<Query> extends Record<string, unknown>
+                      ? {
+                            select: CreateQuery<UnwrapArray<Query>>
+                            where: Params
+                        }
+                      : {
+                            select: true | undefined | null
+                            where: T[K] extends (_: infer Params) => any
+                                ? Params
+                                : never
+                        }
+                  : NonNullable<
+                        UnwrapArray<T[K]>
+                    > extends infer Query extends Record<string, unknown>
+                  ? {} extends UnwrapArray<Query>
+                      ? true | undefined | null
+                      : CreateQuery<UnwrapArray<Query>>
+                  : true | undefined | null
+          }
+        : never) & {
+        __typename?: true | undefined | null
+    }
 
 type UnwrapFunctionalSchema<
     Schema extends Record<string, unknown> | Function | null
@@ -729,8 +733,8 @@ export class Mobius<
     }
 
     $<
-        Query extends Selective<CreateQuery<TypeDefs['Query']>> = {},
-        Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>> = {},
+        Query extends Selective<CreateQuery<TypeDefs['Query']>>,
+        Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>,
         Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
     >(params: {
         query?: Query
