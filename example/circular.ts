@@ -2,26 +2,38 @@ import { Mobius, ResolveType, mobiusToGraphQL } from '../src'
 
 const typeDefs = /* GraphQL */ `
     type Comment {
-        A: A
         user: User
         comment: String!
         id: ID!
     }
 
     type User {
-        comments: [Comment!]!
         id: ID!
-    }
-
-    enum A {
-        A
-        B
-        C
+        comments: [Comment!]!
     }
 
     type Query {
-        H(a: String, b: String): String!
+        getUser(id: ID!): User
     }
 `
 
 const mobius = new Mobius<typeof typeDefs>()
+
+mobius.query({
+    getUser: {
+        where: {
+            id: 'AWD'
+        },
+        select: {
+            id: true,
+            comments: {
+                user: {
+                    id: true,
+                    comments: {
+                        id: true
+                    }
+                }
+            }
+        }
+    }
+})

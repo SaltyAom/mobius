@@ -4,6 +4,9 @@ Feature:
 
 Bug fix:
 - Query root array type safety
+- Query nullable type
+- Type inference not showing when referece
+- Much more but I forgor 💀
 
 # 0.0.0
 Feat:
