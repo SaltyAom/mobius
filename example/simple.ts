@@ -1,8 +1,18 @@
 import { Mobius } from '../src'
 
 const typeDefs = /* GraphQL */ `
+    interface B {
+        C: String!
+        D: String!
+    }
+
+    fragment ABC on A {
+        A
+        B
+    }
+
     # Hello World
-    type A {
+    type A implements B {
         A: String!
         B: String!
     }
@@ -15,16 +25,26 @@ const typeDefs = /* GraphQL */ `
 
 const mobius = new Mobius<typeof typeDefs>()
 
-const { result } = mobius.query({
-    Hello: {
-        where: {
-            word: 'Hi'
-        },
-        select: {
-            A: true
-        }
-    }
-})
+mobius.klein!
+mobius.klein!.Fragment.ABC
 
-const response = await result
-response?.Hello.A
+type B = {
+    "A": "A!"
+    "B": "B!"
+}
+
+type A = Pick<B, "B" | "A">
+
+// const { result } = mobius.query({
+//     Hello: {
+//         where: {
+//             word: 'Hi'
+//         },
+//         select: {
+//             A: true
+//         }
+//     }
+// })
+
+// const response = await result
+// response?.Hello.A

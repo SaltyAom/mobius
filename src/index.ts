@@ -64,19 +64,24 @@ type ExtractType<T extends string> = T extends `${infer Type}\n${infer Rest}`
 type CustomTypes = Record<string, string | Record<string, unknown>>
 type Scalar = Record<string, unknown>
 
+/**
+ * Actually a string
+ */
+type ID = string
+
 type GQLTypes = {
     String: string
     Int: number
     Float: number
     Boolean: boolean
-    ID: string
+    ID: ID
 }
 
 type MergeInterface<
     Interfaces extends string,
     Known extends CustomTypes = {},
     Types extends Record<string, unknown> = {}
-> = Interfaces extends `${infer Name},${infer Rest}`
+> = Interfaces extends `${infer Name}${',' | '&'}${infer Rest}`
     ? MergeInterface<
           Rest,
           Known,
@@ -106,21 +111,16 @@ type RemoveMultiLineComment<T extends string> =
 
 type CreateInnerMobius<
     T extends string,
-    Scalars extends Scalar = {},
     Known extends CustomTypes = {}
 > = T extends `${infer Ops}{${infer Schema}}${infer Rest}`
     ? Trim<RemoveComment<Ops>> extends `${infer Keyword} ${infer Name}`
         ? CreateInnerMobius<
               Rest,
-              Scalars,
               Known &
                   (Keyword extends 'type'
                       ? {
                             [name in TrimLeft<FirstWord<Name>>]: Prettify<
-                                MapSchema<
-                                    RemoveComment<Schema>,
-                                    Known & Scalars
-                                > &
+                                MapSchema<RemoveComment<Schema>, Known> &
                                     (Name extends `${infer _} implements ${infer Interfaces}`
                                         ? MergeInterface<Interfaces, Known>
                                         : {})
@@ -144,19 +144,15 @@ type CreateInnerMobius<
                             Fragment: {
                                 [name in TrimLeft<FirstWord<Name>>]: Prettify<
                                     Name extends `${infer _} on ${infer Target}`
-                                        ? Target extends keyof Known
-                                            ? Pick<
-                                                  Known[Target],
-                                                  NonNullable<
-                                                      Exclude<
-                                                          MapEnum<
-                                                              RemoveComment<Schema>
-                                                          >,
-                                                          ''
-                                                      >
-                                                  >
+                                        ? {
+                                              Target: Target
+                                              Value: Exclude<
+                                                  MapEnum<
+                                                      RemoveComment<Schema>
+                                                  >,
+                                                  '' | null | undefined
                                               >
-                                            : {}
+                                          }
                                         : {}
                                 >
                             }
@@ -167,7 +163,6 @@ type CreateInnerMobius<
                             `${TrimLeft<
                                 GetLastLine<Ops>
                             >}{${RemoveComment<Schema>}}`,
-                            Scalars,
                             Known
                         >
                       : Keyword extends 'union'
@@ -176,8 +171,7 @@ type CreateInnerMobius<
                             `${TrimLeft<
                                 GetLastLine<Ops>
                             >}{${RemoveComment<Schema>}}`,
-                            Scalars,
-                            Known & MapUnion<Ops, Scalars & Known>
+                            Known & MapUnion<Ops, Known>
                         >
                       : /**
                        * ? TypeScript is greedy, scalar can eat other word until
@@ -187,11 +181,7 @@ type CreateInnerMobius<
                       ? TrimLeft<
                             RemoveComment<Ops>
                         > extends `${infer _}\n${infer Prefix}`
-                          ? CreateInnerMobius<
-                                `${Prefix}{${Schema}}`,
-                                Scalars,
-                                Known
-                            >
+                          ? CreateInnerMobius<`${Prefix}{${Schema}}`, Known>
                           : {}
                       : Known)
           >
@@ -286,41 +276,17 @@ type CreateArray<
 
 type ABC = CreateArray<`Hello`>
 
-type FormatType<T extends string> = T extends `[${string}`
-    ? // ? Is Array
-      T extends `${infer Type}!`
-        ? CreateArray<Type>
-        : CreateArray<T> | null
-    : // ? Not Array
-    T extends `${infer Type}!`
-    ? Type
-    : T | null
-
-// type MapType<T extends string, Known extends CustomTypes = {}> = MapInnerType<
-//     FirstWord<T> extends `${infer Type}!` ? Type : T,
-//     Known
-// > extends infer Type
-//     ? unknown extends Type
-//         ? unknown
-//         : T extends `${infer _}!${infer _}`
-//         ? Type
-//         : Type | null
-//     : unknown
-
-// type MapInnerType<T extends string, Known extends CustomTypes = {}> = GQLTypes &
-//     Known extends infer Types
-//     ? T extends keyof Types
-//         ? Types[T]
-//         : T extends `[${infer InnerType}!]`
-//         ? InnerType extends keyof Types
-//             ? Types[InnerType][]
-//             : `__$${InnerType}`[]
-//         : T extends `[${infer InnerType}]`
-//         ? InnerType extends keyof Types
-//             ? (Types[InnerType] | null)[]
-//             : `__$${InnerType}`[]
-//         : `__$${T}`
-//     : never
+type FormatType<T extends string> = FirstWord<T> extends infer T
+    ? T extends `[${string}`
+        ? // ? Is Array
+          T extends `${infer Type}!`
+            ? CreateArray<Type>
+            : CreateArray<T> | null
+        : // ? Not Array
+        T extends `${infer Type}!`
+        ? Type
+        : T | null
+    : never
 
 type MapArgument<
     T extends string,
@@ -352,6 +318,34 @@ type MapArgument<
           }
     : Carry
 
+type MapFragment<
+    Typed extends Record<string> & {
+        Fragment: Record<
+            string,
+            {
+                Target: string
+                Value: string
+            }
+        >
+    }
+> = Typed extends { Fragment: infer Fragments }
+    ? Omit<Typed, 'Fragment'> & {
+          Fragment: Prettify<{
+              [K in keyof Fragments]: Fragments[K] extends {
+                  Target: infer Target
+                  Value: infer Value
+              }
+                  ? Typed extends { [a in Target]: infer Schema }
+                      ? Prettify<Pick<Schema, Value>>
+                      : {}
+                  : {
+                        K: K
+                        F: Fragments
+                    }
+          }>
+      }
+    : Typed
+
 /**
  * Infers GraphQL types to TypeScript
  *
@@ -380,9 +374,9 @@ type MapArgument<
 export type CreateMobius<
     T extends string,
     Scalars extends Scalar = {}
-> = ResolveType<CreateInnerMobius<T, Scalars>, Scalars> extends infer Typed
+> = CreateInnerMobius<T> extends infer Typed
     ? Prettify<
-          Typed &
+          MapFragment<ResolveType<Typed, Scalars>> &
               ('Query' extends keyof Typed
                   ? {}
                   : {
@@ -402,7 +396,8 @@ export type CreateMobius<
                   ? {}
                   : {
                         Fragment: {}
-                    })
+                    }) &
+              Scalars
       >
     : never
 
@@ -427,13 +422,17 @@ type ResolveKey<
     Result extends Record<string, unknown>,
     Scalars extends Record<string, unknown>
 > = K extends (p: infer Params) => infer Returned
-    ? (p: {
+    ? {
           [K in keyof Params]: ResolveKey<
               NonNullable<Params[K]>,
               Result,
               Scalars
           >
-      }) => ResolveKey<Returned, Result, Scalars>
+      } extends infer Argument
+        ? Partial<Argument> extends Argument
+            ? (p?: Argument) => ResolveKey<Returned, Result, Scalars>
+            : (p: Argument) => ResolveKey<Returned, Result, Scalars>
+        : never
     : K extends keyof Scalars
     ? Scalars[K]
     : K extends keyof Result
@@ -696,7 +695,7 @@ export class Mobius<
     /**
      * ! For type declaration only
      */
-    mobius: TypeDefs | null = null
+    klein: TypeDefs | null = null
     /**
      * Available if `typeDefs` is passed
      */

@@ -298,7 +298,7 @@ const response = mobius.query({
                 data: {
                     title: {
                         display: true
-                    },
+                    }
                 }
             }
         }

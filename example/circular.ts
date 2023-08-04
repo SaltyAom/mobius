@@ -24,6 +24,4 @@ const typeDefs = /* GraphQL */ `
     }
 `
 
-const client = new Mobius<typeof typeDefs>()
-
-const defs = client.mobius!
+const mobius = new Mobius<typeof typeDefs>()
