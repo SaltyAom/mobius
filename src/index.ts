@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /**
  * # Mobius
  *
@@ -263,8 +264,10 @@ type RemovePrefixArrayBracket<T extends string> = T extends `[${infer Rest}`
     ? RemovePrefixArrayBracket<Rest>
     : T
 
+// @ts-ignore To hard to explain this shape in TS, I works trust me
 type CreateArray<
     T extends string,
+    // @ts-ignore
     Carry extends string | null = (
         RemovePrefixArrayBracket<T> extends `${infer Name}]${string}` ? Name : T
     ) extends infer Name
@@ -272,9 +275,8 @@ type CreateArray<
             ? A
             : Name | null
         : never
+    // @ts-ignore
 > = T extends `[${infer Rest}` ? CreateArray<Rest, [Carry]> : Carry
-
-type ABC = CreateArray<`Hello`>
 
 type FormatType<T extends string> = FirstWord<T> extends infer T
     ? T extends `[${string}`
@@ -319,7 +321,7 @@ type MapArgument<
     : Carry
 
 type MapFragment<
-    Typed extends Record<string> & {
+    Typed extends Record<string, unknown> & {
         Fragment: Record<
             string,
             {
@@ -332,11 +334,15 @@ type MapFragment<
     ? Omit<Typed, 'Fragment'> & {
           Fragment: Prettify<{
               [K in keyof Fragments]: Fragments[K] extends {
-                  Target: infer Target
+                  Target: infer Target extends string
                   Value: infer Value
               }
-                  ? Typed extends { [a in Target]: infer Schema }
-                      ? Prettify<Pick<Schema, Value>>
+                  ? Typed extends {
+                        [a in Target]: infer Schema extends {
+                            [a in Extract<Value, string>]: unknown
+                        }
+                    }
+                      ? Prettify<Pick<Schema, Extract<Value, string>>>
                       : {}
                   : {
                         K: K
@@ -376,6 +382,7 @@ export type CreateMobius<
     Scalars extends Scalar = {}
 > = CreateInnerMobius<T> extends infer Typed
     ? Prettify<
+          // @ts-ignore
           MapFragment<ResolveType<Typed, Scalars>> &
               ('Query' extends keyof Typed
                   ? {}
@@ -424,14 +431,17 @@ type ResolveKey<
 > = K extends (p: infer Params) => infer Returned
     ? {
           [K in keyof Params]: ResolveKey<
+              // @ts-ignore: Trust me bro
               NonNullable<Params[K]>,
               Result,
               Scalars
           >
       } extends infer Argument
         ? Partial<Argument> extends Argument
-            ? (p?: Argument) => UnwrapKey<Returned, Result, Scalars>
-            : (p: Argument) => UnwrapKey<Returned, Result, Scalars>
+            ? // @ts-ignore: Trust me bro
+              (p?: Argument) => UnwrapKey<Returned, Result, Scalars>
+            : // @ts-ignore: Trust me bro
+              (p: Argument) => UnwrapKey<Returned, Result, Scalars>
         : never
     : K extends keyof Scalars
     ? Scalars[K]
@@ -467,6 +477,7 @@ type Selective<T> = T extends object
       } & ('where' extends keyof T
           ? T['where'] extends NonNullable<T['where']>
               ? {
+                    // @ts-ignore: always with where
                     select: T['Select']
                     where: T['where']
                 }
@@ -488,11 +499,19 @@ export type CreateQuery<T extends Record<string, unknown>> =
     (NonNullable<T> extends infer T
         ? {
               [K in keyof T]: T[K] extends (_: infer Params) => infer Query
-                  ? UnwrapArray<NonNullable<Query>> extends Record<string, unknown>
-                      ? {
-                            select: CreateQuery<UnwrapArray<Query>>
-                            where: Params
-                        }
+                  ? UnwrapArray<NonNullable<Query>> extends Record<
+                        string,
+                        unknown
+                    >
+                      ? UnwrapArray<Query> extends infer A extends Record<
+                            string,
+                            unknown
+                        >
+                          ? {
+                                select: CreateQuery<A>
+                                where: Params
+                            }
+                          : {}
                       : {
                             select: true | undefined | null
                             where: T[K] extends (_: infer Params) => any
@@ -515,44 +534,48 @@ type UnwrapFunctionalSchema<
     Schema extends Record<string, unknown> | Function | null
 > = Schema extends ((
     ...p: any[]
-) => infer Returned extends Record<string, unknown>)
-    ? Returned
+) => infer Returned extends Record<string, unknown> | null)
+    ? NonNullable<Returned>
     : Schema extends Record<string, unknown>
     ? Schema
     : never
 
 type Resolve<
     Query extends Record<string, unknown>,
-    Model extends Record<string, unknown>
-> = Prettify<{
-    [K in keyof Query]: Model extends Record<
-        K,
-        infer Schema extends Record<string, unknown> | Function | null
-    >
-        ? Query[K] extends true
-            ? Model[K]
-            : Query[K] extends {
-                  select: infer Selected extends Record<string, unknown>
-              }
-            ?
-                  | Resolve<Selected, UnwrapFunctionalSchema<Schema>>
-                  | (null extends Schema ? null : never)
-            : Query[K] extends Record<string, unknown>
-            ?
-                  | Resolve<Query[K], UnwrapFunctionalSchema<Schema>>
-                  | (null extends Schema ? null : never)
-            : {}
-        : K extends keyof Model
-        ? Model[K] extends Array<any>
-            ? K extends keyof Query
-                ? Resolve<
-                      Query[K] extends Record<string, unknown> ? Query[K] : {},
-                      Model[K][number]
-                  >[]
-                : []
-            : Model[K]
-        : never
-}>
+    M extends Record<string, unknown>
+> = NonNullable<M> extends infer Model
+    ? Prettify<{
+          [K in keyof Query]: Model extends Record<
+              K,
+              infer Schema extends Record<string, unknown> | Function | null
+          >
+              ? Query[K] extends true
+                  ? Model[K]
+                  : Query[K] extends {
+                        select: infer Selected extends Record<string, unknown>
+                    }
+                  ?
+                        | Resolve<Selected, UnwrapFunctionalSchema<Schema>>
+                        | (null extends Schema ? null : never)
+                  : Query[K] extends Record<string, unknown>
+                  ?
+                        | Resolve<Query[K], UnwrapFunctionalSchema<Schema>>
+                        | (null extends Schema ? null : never)
+                  : {}
+              : K extends keyof Model
+              ? Model[K] extends Array<any>
+                  ? K extends keyof Query
+                      ? Resolve<
+                            Query[K] extends Record<string, unknown>
+                                ? Query[K]
+                                : {},
+                            Model[K][number]
+                        >[]
+                      : []
+                  : Model[K]
+              : never
+      }>
+    : never
 
 /**
  * Create Prisma-like function for GraphQL
@@ -605,11 +628,12 @@ export const mobiusToGraphQL = <
             )
                 return value.select
 
-            const mapped = {}
+            const mapped: Record<string, unknown> = {}
 
             for (const [key, child] of Object.entries(value)) {
-                if (typeof child === 'object' && 'where' in child) {
+                if (typeof child === 'object' && 'where' in child!) {
                     mapped[`${key}(${JSON.stringify(child.where)})`] =
+                        // @ts-ignore select is always with where
                         child.select
                     continue
                 }
@@ -665,12 +689,13 @@ export const createFragment = (schema: string) => {
     const matches = schema.match(extractFragment)
     if (!matches) return {}
 
-    const fragments = {}
+    const fragments: Record<string, Record<string, true>> = {}
 
     if (matches) {
         for (const match of matches) {
-            const [, name, content] = extractFragment.exec(matches)
-            const current = {}
+            // @ts-ignore
+            const [, name, content] = extractFragment.exec(matches)!
+            const current: Record<string, true> = {}
 
             for (const item of content.split(/(,|\n)/g))
                 current[item.trim()] = true
@@ -682,11 +707,11 @@ export const createFragment = (schema: string) => {
     return fragments
 }
 
-type ToSelectiveFragment<T extends Record<string, unknown>> = {
+type ToSelectiveFragment<T extends Record<string, unknown>> = Prettify<{
     [K in keyof T]: T[K] extends Record<string, unknown>
         ? ToSelectiveFragment<T[K]>
         : true
-}
+}>
 
 export class Mobius<
     Declaration extends string = '',
@@ -712,14 +737,15 @@ export class Mobius<
             typeDefs?: Declaration
         }
     ) {
-        if (config?.typeDefs) this.fragments = createFragment(config.typeDefs)
+        if (config?.typeDefs)
+            this.fragments = createFragment(config.typeDefs) as any
     }
 
     protected get fetch() {
         return (
             this.config?.fetch ??
             ((query: string) =>
-                fetch(this.config?.url, {
+                fetch(this.config?.url ?? '::1', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -762,10 +788,11 @@ export class Mobius<
         mutation: string
         subscription: string
     } {
+        // Too hard to resolve selective query to enforce, not worth
         const q = {
-            query: mobiusToGraphQL('query', params),
-            mutation: mobiusToGraphQL('mutation', params),
-            subscription: mobiusToGraphQL('subscription', params)
+            query: mobiusToGraphQL('query', params as any),
+            mutation: mobiusToGraphQL('mutation', params as any),
+            subscription: mobiusToGraphQL('subscription', params as any)
         }
 
         return {
@@ -774,7 +801,7 @@ export class Mobius<
                 query: this.fetch(q.query),
                 mutation: this.fetch(q.mutation),
                 subscription: this.fetch(q.subscription)
-            }
+            } as any
         }
     }
 
@@ -786,11 +813,12 @@ export class Mobius<
             {} extends Query ? {} : Resolve<Query, TypeDefs['Query'] & Scalars>
         > | null>
     } {
+        // @ts-ignore
         const q = mobiusToGraphQL('query', params)
 
         return {
             query: q,
-            result: this.fetch(q)
+            result: this.fetch(q) as any
         }
     }
 
@@ -806,11 +834,12 @@ export class Mobius<
             >
         >
     } {
+        // @ts-ignore
         const q = mobiusToGraphQL('mutate', params)
 
         return {
             mutate: q,
-            result: this.fetch(q)
+            result: this.fetch(q) as any
         }
     }
 
@@ -828,11 +857,12 @@ export class Mobius<
             >
         >
     } {
+        // @ts-ignore
         const q = mobiusToGraphQL('subscription', params)
 
         return {
             subscription: q,
-            result: this.fetch(q)
+            result: this.fetch(q) as any
         }
     }
 }

@@ -19,7 +19,9 @@ const typeDefs = /* GraphQL */ `
 
 const mobius = new Mobius<typeof typeDefs>()
 
-mobius.query({
+mobius.klein!.Query.getUser
+
+const a = mobius.query({
     getUser: {
         where: {
             id: 'AWD'
@@ -29,11 +31,10 @@ mobius.query({
             comments: {
                 user: {
                     id: true,
-                    comments: {
-                        id: true
-                    }
                 }
             }
         }
     }
 })
+
+a.result.then(x => x!.getUser)

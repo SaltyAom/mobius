@@ -37,19 +37,9 @@
     "release": "npm run build && npm run test && npm publish --access public",
     "trace": "tsc --generateTrace ./trace --incremental false"
   },
-  "peerDependencies": {
-    "elysia": ">= 0.5.12",
-    "graphql": ">= 16.6.0",
-    "graphql-yoga": ">= 3.0.0"
-  },
   "devDependencies": {
-    "@envelop/core": "^3.0.6",
-    "@envelop/graphql-jit": "^5.0.6",
-    "@envelop/parser-cache": "^5.0.6",
-    "@saltyaom/gql": "^1.3.2",
     "@types/node": "^20.1.4",
     "bun-types": "^0.7.0",
-    "elysia": "^0.6.0-alpha.4",
     "eslint": "^8.40.0",
     "expect-type": "^0.16.0",
     "rimraf": "4.4.1",

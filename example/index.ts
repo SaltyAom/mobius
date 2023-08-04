@@ -302,7 +302,7 @@ const response = mobius.query({
                     related: {
                         select: {
                             title: {
-                                display: true
+                                display: true,
                             },
                             related: {
                                 select: {

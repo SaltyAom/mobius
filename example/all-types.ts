@@ -60,7 +60,7 @@ type Scalar = {
 
 const mobius = new Mobius<typeof typeDefs, Scalar>()
 
-export type T = (typeof mobius)['mobius']
+export type T = (typeof mobius)['klein']
 
 const { ABCFrag } = mobius.fragments!
 
