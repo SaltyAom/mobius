@@ -1,6 +1,6 @@
 {
   "name": "graphql-mobius",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "End-to-end type safe TypeScript GraphQL Client",
   "author": {
     "name": "saltyAom",
@@ -42,6 +42,8 @@
     "bun-types": "^0.7.0",
     "eslint": "^8.40.0",
     "expect-type": "^0.16.0",
+    "graphql": "^16.7.1",
+    "graphql-yoga": "^4.0.3",
     "rimraf": "4.4.1",
     "typescript": "^5.1.6"
   },

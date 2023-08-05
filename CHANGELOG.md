@@ -1,3 +1,11 @@
+# 0.1.5 - 5 Aug 2023
+Feat:
+- Add `Resolver` type
+
+# 0.1.3 - 5 Aug 2023
+Bug fix:
+- Resolve type of nested array
+
 # 0.1.3 - 5 Aug 2023
 Bug fix:
 - Resolve query of nested non nullable array

@@ -110,11 +110,36 @@ type RemoveMultiLineComment<T extends string> =
         ? `${First}${RemoveMultiLineComment<Rest>}`
         : T
 
+type ExtractAfterComment<T extends string> =
+    TrimLeft<T> extends infer T extends string
+        ? T extends `${string}#${infer Comment}\n${infer AfterComment}`
+            ? AfterComment
+            : T extends `${string}"""${infer Comment}"""${infer AfterComment}`
+            ? AfterComment
+            : T
+        : T
+
+type ExtractIfStartWithComment<T extends string> =
+    TrimLeft<T> extends infer T extends string
+        ? T extends `#${infer Comment}\n${infer AfterComment}`
+            ? AfterComment
+            : T extends `"""${infer Comment}"""${infer AfterComment}`
+            ? AfterComment
+            : T
+        : T
+
+// Schema extends `${infer BeforeComment}${'#' | '"""'}${string}`
+// ? CreateInnerMobius<
+//       `${Ops}{${BeforeComment}${ExtractAfterComment<Schema>}${Rest}`,
+//       Known
+//   >
+// :
+
 export type CreateInnerMobius<
     T extends string,
     Known extends CustomTypes = {}
-> = T extends `${infer Ops}{${infer Schema}}${infer Rest}`
-    ? Trim<RemoveComment<Ops>> extends `${infer Keyword} ${infer Name}`
+> = ExtractIfStartWithComment<T> extends `${infer Ops}{${infer Schema}}${infer Rest}`
+    ? Trim<Ops> extends `${infer Keyword} ${infer Name}`
         ? CreateInnerMobius<
               Rest,
               Known &
@@ -184,7 +209,7 @@ export type CreateInnerMobius<
                         > extends `${infer _}\n${infer Prefix}`
                           ? CreateInnerMobius<`${Prefix}{${Schema}}`, Known>
                           : {}
-                      : Known)
+                      : {})
           >
         : Known
     : Known
@@ -471,6 +496,108 @@ export type ResolveType<
     Scalars extends Record<string, unknown> = {}
 > = ResolveInnerType<Data, Scalars>['result']
 
+type AddUndefinedIfNullable<T> = T extends null | undefined ? T | undefined : T
+
+type UndefinedToNullableFields<T> = T extends object
+    ? {
+          [K in keyof T]?: UndefinedToNullableFields<
+              AddUndefinedIfNullable<T[K]>
+          >
+      }
+    : AddUndefinedIfNullable<T>
+
+type MaybePromise<T> = T | Promise<T>
+
+export type Resolver<
+    T extends {
+        Query: Record<string, unknown>
+        Mutation: Record<string, unknown>
+        Subscription: Record<string, unknown>
+    },
+    Context = unknown
+> = Prettify<
+    ({
+        [K in keyof T['Query']]: T['Query'][K] extends (
+            arg: infer Args
+        ) => infer Returned
+            ? (
+                  parent: unknown,
+                  args: Args,
+                  context: Context,
+                  info: unknown
+              ) =>
+                  | MaybePromise<UndefinedToNullableFields<Returned>>
+                  | (Returned extends null ? void : never)
+            : (
+                  parent: unknown,
+                  args: null | undefined | {},
+                  context: Context,
+                  info: unknown
+              ) =>
+                  | MaybePromise<UndefinedToNullableFields<T['Query'][K]>>
+                  | (T['Query'][K] extends null ? void : never)
+    } extends infer A
+        ? {} extends A
+            ? { Query?: {} }
+            : { Query: A }
+        : never) &
+        ({
+            [K in keyof T['Mutation']]: T['Mutation'][K] extends (
+                arg: infer Args
+            ) => infer Returned
+                ? (
+                      parent: unknown,
+                      args: Args,
+                      context: Context,
+                      info: unknown
+                  ) =>
+                      | MaybePromise<UndefinedToNullableFields<Returned>>
+                      | (Returned extends null ? void : never)
+                : (
+                      parent: unknown,
+                      args: null | undefined | {},
+                      context: Context,
+                      info: unknown
+                  ) =>
+                      | MaybePromise<
+                            UndefinedToNullableFields<T['Mutation'][K]>
+                        >
+                      | (T['Mutation'][K] extends null ? void : never)
+        } extends infer A
+            ? {} extends A
+                ? { Mutation?: {} }
+                : { Mutation: A }
+            : never) &
+        ({
+            [K in keyof T['Mutation']]: T['Mutation'][K] extends (
+                arg: infer Args
+            ) => infer Returned
+                ? (
+                      parent: unknown,
+                      args: Args,
+                      context: Context,
+                      info: unknown
+                  ) =>
+                      | MaybePromise<UndefinedToNullableFields<Returned>>
+                      | (Returned extends null ? void : never)
+                : (
+                      parent: unknown,
+                      args: null | undefined | {},
+                      context: Context,
+                      info: unknown
+                  ) =>
+                      | MaybePromise<
+                            UndefinedToNullableFields<T['Mutation'][K]>
+                        >
+                      | (T['Mutation'][K] extends null ? void : never)
+        } extends infer A
+            ? {} extends A
+                ? { Subscription?: {} }
+                : { Subscription: A }
+            : never) &
+        Partial<Omit<T, 'Query' | 'Mutation' | 'Subscription' | 'Fragment'>>
+>
+
 type Selective<T> = T extends object
     ? {
           [K in keyof T]?: K extends 'where' ? T[K] : Selective<T[K]>
@@ -723,6 +850,12 @@ export class Mobius<
      * ! For type declaration only
      */
     klein: TypeDefs | null = null
+
+    /**
+     * ! For type declaration only
+     */
+    resolvers: Resolver<TypeDefs> | null = null
+
     /**
      * Available if `typeDefs` is passed
      */

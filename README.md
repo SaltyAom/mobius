@@ -15,6 +15,7 @@ Mobius can parse GraphQL schema to TypeScript to create End-to-end type safe Gra
 Made possible by Template Literal and various dark magic.
 
 ### Known Caveat:
+- Comment must not have "{}" (bracket) otherwise type will not be resolved
 - Nested fragment is not supported
 - TypeScript has limited total stack, pass around ~8-9 locs / 14k generated around ~900 types (compacted, only types)
 
@@ -132,6 +133,69 @@ client.klein
 
 If scalars isn't provided but is defined in GraphQL anyway, it should resolved as **unknown**
 
+## Resolvers
+You can use Mobius to strictly type `Resolvers` function for GraphQL Apollo and GraphQL Yoga.
+
+### Using Mobius Instance
+```ts
+import { Mobius } from 'graphql-mobius'
+
+const typeDefs = `
+    type A {
+        A: String!
+        B: String!
+    }
+
+    type Query {
+        Hello(word: String!): A!
+    }
+`
+
+const mobius = new Mobius({
+    typeDefs
+})
+
+const resolvers = {
+    Query: {
+        Hello(_, { word }) {
+            return {
+                A: "Hello",
+                B: "Hello"
+            }
+        }
+    }
+} satisfies typeof mobius.resolvers
+```
+
+### Using Type Definitions
+```ts
+import type { CreateMobius, Resolvers } from 'graphql-mobius'
+
+const typeDefs = `
+    type A {
+        A: String!
+        B: String!
+    }
+
+    type Query {
+        Hello(word: String!): A!
+    }
+`
+
+type Resolver = Resolvers<CreateMobius<typeof typeDefs>>
+
+const resolvers = {
+    Query: {
+        Hello(_, { word }) {
+            return {
+                A: "Hello",
+                B: "Hello"
+            }
+        }
+    }
+} satisfies Resolver
+```
+
 ## Fragment
 You use use `mobius.fragment` **if you provided typeDefs as literal code**
 
@@ -204,7 +268,8 @@ type Engine = CreateMobius<typeof typeDefs>
 - Rest of the types declarations infers from GraphQL Schema
 
 ### Others utilities
-- `CrateMobius (Type)` - Infers GraphQL types to TypeScript
+- `CreateMobius (Type)` - Infers GraphQL types to TypeScript
+- `Resolver (Type)` - Infers GraphQL types to TypeScript
 - `RemoveComment (Type)` - Remove GraphQL comment in type-level
 - `CreateQuery (Type)` - Create Prisma-like argument syntax for Client
 - `MakeExecutable (Type)` - Create Prisma-like function for GraphQL
