@@ -110,36 +110,11 @@ type RemoveMultiLineComment<T extends string> =
         ? `${First}${RemoveMultiLineComment<Rest>}`
         : T
 
-type ExtractAfterComment<T extends string> =
-    TrimLeft<T> extends infer T extends string
-        ? T extends `${string}#${infer Comment}\n${infer AfterComment}`
-            ? AfterComment
-            : T extends `${string}"""${infer Comment}"""${infer AfterComment}`
-            ? AfterComment
-            : T
-        : T
-
-type ExtractIfStartWithComment<T extends string> =
-    TrimLeft<T> extends infer T extends string
-        ? T extends `#${infer Comment}\n${infer AfterComment}`
-            ? AfterComment
-            : T extends `"""${infer Comment}"""${infer AfterComment}`
-            ? AfterComment
-            : T
-        : T
-
-// Schema extends `${infer BeforeComment}${'#' | '"""'}${string}`
-// ? CreateInnerMobius<
-//       `${Ops}{${BeforeComment}${ExtractAfterComment<Schema>}${Rest}`,
-//       Known
-//   >
-// :
-
 export type CreateInnerMobius<
     T extends string,
     Known extends CustomTypes = {}
-> = ExtractIfStartWithComment<T> extends `${infer Ops}{${infer Schema}}${infer Rest}`
-    ? Trim<Ops> extends `${infer Keyword} ${infer Name}`
+> = T extends `${infer Ops}{${infer Schema}}${infer Rest}`
+    ? Trim<RemoveComment<Ops>> extends `${infer Keyword} ${infer Name}`
         ? CreateInnerMobius<
               Rest,
               Known &

@@ -873,7 +873,7 @@ import { Mobius, type CreateMobius } from '../../src'
                 }
             },
             where: {
-                cdef: 'D',
+                cdef: 'D'
             }
         }
     })
