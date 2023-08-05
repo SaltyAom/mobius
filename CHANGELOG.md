@@ -1,5 +1,9 @@
 # 0.1.3 - 5 Aug 2023
 Bug fix:
+- Resolve query of nested non nullable array
+
+# 0.1.3 - 5 Aug 2023
+Bug fix:
 - Unwrap query parameters
 - Inline Err
 

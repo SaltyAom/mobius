@@ -503,10 +503,9 @@ export type CreateQuery<T extends Record<string, unknown>> =
                         string,
                         unknown
                     >
-                      ? NonNullable<UnwrapArray<Query>> extends infer A extends Record<
-                            string,
-                            unknown
-                        >
+                      ? NonNullable<
+                            UnwrapArray<Query>
+                        > extends infer A extends Record<string, unknown>
                           ? {
                                 select: CreateQuery<A>
                                 where: Params
@@ -532,10 +531,13 @@ export type CreateQuery<T extends Record<string, unknown>> =
 
 type UnwrapFunctionalSchema<
     Schema extends Record<string, unknown> | Function | null
-> = Schema extends ((
-    ...p: any[]
-) => infer Returned extends Record<string, unknown> | null)
-    ? NonNullable<Returned>
+> = Schema extends (...p: any[]) => infer Returned
+    ? NonNullable<UnwrapArray<Returned>> extends infer A extends Record<
+          string,
+          unknown
+      >
+        ? A
+        : Returned
     : Schema extends Record<string, unknown>
     ? Schema
     : never
@@ -554,13 +556,9 @@ type Resolve<
                   : Query[K] extends {
                         select: infer Selected extends Record<string, unknown>
                     }
-                  ?
-                        | Resolve<Selected, UnwrapFunctionalSchema<Schema>>
-                        | (null extends Schema ? null : never)
+                  ? Resolve<Selected, UnwrapFunctionalSchema<Schema>>
                   : Query[K] extends Record<string, unknown>
-                  ?
-                        | Resolve<Query[K], UnwrapFunctionalSchema<Schema>>
-                        | (null extends Schema ? null : never)
+                  ? Resolve<Query[K], UnwrapFunctionalSchema<Schema>>
                   : {}
               : K extends keyof Model
               ? Model[K] extends Array<any>

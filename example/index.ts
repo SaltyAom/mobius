@@ -302,7 +302,7 @@ const response = mobius.query({
                     related: {
                         select: {
                             title: {
-                                display: true,
+                                display: true
                             },
                             related: {
                                 select: {
@@ -323,4 +323,4 @@ const response = mobius.query({
     }
 })
 
-const result = await response.result
+const result = await response.result.then((x) => x?.nhql.by.data?.related)

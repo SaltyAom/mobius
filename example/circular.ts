@@ -1,4 +1,4 @@
-import { Mobius, ResolveType, mobiusToGraphQL } from '../src'
+import { Mobius } from '../src'
 
 const typeDefs = /* GraphQL */ `
     type Comment {
@@ -9,7 +9,11 @@ const typeDefs = /* GraphQL */ `
 
     type User {
         id: ID!
-        comments: [Comment!]!
+        comments: [Comment]
+    }
+
+    fragment A on User {
+        id
     }
 
     type Query {
@@ -18,8 +22,6 @@ const typeDefs = /* GraphQL */ `
 `
 
 const mobius = new Mobius<typeof typeDefs>()
-
-mobius.klein!.Query.getUser
 
 const a = mobius.query({
     getUser: {
@@ -36,5 +38,3 @@ const a = mobius.query({
         }
     }
 })
-
-a.result.then(x => x!.getUser)
