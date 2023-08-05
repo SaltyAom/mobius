@@ -1,3 +1,7 @@
+# 0.1.6 - 6 Aug 2023
+Bug fix:
+- Query doesn't resolve root array type
+
 # 0.1.5 - 5 Aug 2023
 Feat:
 - Add `Resolver` type

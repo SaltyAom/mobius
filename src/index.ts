@@ -644,6 +644,20 @@ type UnwrapFunctionalSchema<
     ? Schema
     : never
 
+type ResolveQuery<
+    Query extends Record<string, unknown>,
+    Model extends Record<string, unknown>
+> = {
+    [K in keyof Query]: Model extends Record<
+        K,
+        infer Schema extends Record<string, unknown> | Function | null
+    >
+        ? Model[K] extends (...args: any[]) => any[]
+            ? Resolve<Query, Model>[K][]
+            : Resolve<Query, Model>[K]
+        : never
+}
+
 type Resolve<
     Query extends Record<string, unknown>,
     M extends Record<string, unknown>
@@ -671,7 +685,7 @@ type Resolve<
                                 : {},
                             Model[K][number]
                         >[]
-                      : []
+                      : unknown[]
                   : Model[K]
               : never
       }>
@@ -873,103 +887,52 @@ export class Mobius<
         mutate?: Mutate
         subscription?: Subscription
     }): {
-        result: Promise<
-            | Prettify<
-                  ({} extends Query
-                      ? {}
-                      : Resolve<Query, TypeDefs['Query'] & Scalars>) &
-                      ({} extends Mutate
-                          ? {}
-                          : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>) &
-                      ({} extends Subscription
-                          ? {}
-                          : Resolve<
-                                Subscription,
-                                TypeDefs['Subscription'] & Scalars
-                            >)
-              >
-            | undefined
-        >
         query: string
         mutation: string
         subscription: string
     } {
-        // Too hard to resolve selective query to enforce, not worth
-        const q = {
+        return {
             query: mobiusToGraphQL('query', params as any),
             mutation: mobiusToGraphQL('mutation', params as any),
             subscription: mobiusToGraphQL('subscription', params as any)
-        }
-
-        return {
-            ...q,
-            result: {
-                query: this.fetch(q.query),
-                mutation: this.fetch(q.mutation),
-                subscription: this.fetch(q.subscription)
-            } as any
         }
     }
 
     query<Query extends Selective<CreateQuery<TypeDefs['Query']>>>(
         params: Query
-    ): {
-        query: string
-        result: Promise<Prettify<
-            {} extends Query ? {} : Resolve<Query, TypeDefs['Query'] & Scalars>
-        > | null>
-    } {
+    ): Promise<Prettify<
+        {} extends Query ? {} : ResolveQuery<Query, TypeDefs['Query'] & Scalars>
+    > | null> {
         // @ts-ignore
-        const q = mobiusToGraphQL('query', params)
-
-        return {
-            query: q,
-            result: this.fetch(q) as any
-        }
+        return this.fetch(mobiusToGraphQL('query', params))
     }
 
     mutate<Mutate extends Selective<CreateQuery<TypeDefs['Mutation']>>>(
         params: Mutate
-    ): {
-        mutate: string
-        result: Promise<
-            Prettify<
-                {} extends Mutate
-                    ? {}
-                    : Resolve<Mutate, TypeDefs['Mutation'] & Scalars>
-            >
+    ): Promise<
+        Prettify<
+            {} extends Mutate
+                ? {}
+                : ResolveQuery<Mutate, TypeDefs['Mutation'] & Scalars>
         >
-    } {
+    > {
         // @ts-ignore
-        const q = mobiusToGraphQL('mutate', params)
-
-        return {
-            mutate: q,
-            result: this.fetch(q) as any
-        }
+        return this.fetch(mobiusToGraphQL('mutate', params))
     }
 
     subscription<
         Subscription extends Selective<CreateQuery<TypeDefs['Subscription']>>
     >(
         params: Subscription
-    ): {
-        subscription: string
-        result: Promise<
-            Prettify<
-                {} extends Subscription
-                    ? {}
-                    : Resolve<Subscription, TypeDefs['Subscription'] & Scalars>
-            >
+    ): Promise<
+        Prettify<
+            {} extends Subscription
+                ? {}
+                : ResolveQuery<Subscription, TypeDefs['Subscription'] & Scalars>
         >
-    } {
+    > {
         // @ts-ignore
-        const q = mobiusToGraphQL('subscription', params)
-
-        return {
-            subscription: q,
-            result: this.fetch(q) as any
-        }
+        return this.fetch(mobiusToGraphQL('subscription', params))
     }
 }
 

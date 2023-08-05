@@ -864,7 +864,7 @@ import { Mobius, type CreateMobius } from '../../src'
 
     const { ABCFrag } = mobius.fragments!
 
-    const { result } = await mobius.query({
+    const result = await mobius.query({
         Hi: {
             select: {
                 ...ABCFrag,
@@ -878,6 +878,8 @@ import { Mobius, type CreateMobius } from '../../src'
         }
     })
 
+    type Result = NonNullable<Awaited<typeof result>>
+
     expectTypeOf<NonNullable<Awaited<typeof result>>>().toEqualTypeOf<{
         Hi: {
             D: {
@@ -886,5 +888,44 @@ import { Mobius, type CreateMobius } from '../../src'
             A: string
             B: string
         }
+    }>()
+}
+
+// ? Resolve root array type
+{
+    const typeDefs = /* GraphQL */ `
+        type Song {
+            name: String!
+            composer: Composer!
+        }
+
+        type Composer {
+            name: String!
+        }
+
+        type Query {
+            songs(composer: String!): [Song!]!
+        }
+    `
+
+    const a = new Mobius({
+        typeDefs
+    })
+
+    const b = await a.query({
+        songs: {
+            select: {
+                name: true
+            },
+            where: {
+                composer: 'a'
+            }
+        }
+    })
+
+    expectTypeOf<NonNullable<typeof b>>().toEqualTypeOf<{
+        songs: {
+            name: string
+        }[]
     }>()
 }
