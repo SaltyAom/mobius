@@ -1,3 +1,7 @@
+# 0.1.7 - 6 Aug 2023
+Bug fix:
+- MobiusToGraphQL strip string quote
+
 # 0.1.6 - 6 Aug 2023
 Bug fix:
 - Query doesn't resolve root array type

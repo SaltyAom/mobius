@@ -1,4 +1,4 @@
-import { Mobius } from '../src'
+import { Mobius, mobiusToGraphQL } from '../src'
 
 const typeDefs = /* GraphQL */ `
     type Song {
@@ -19,15 +19,28 @@ const a = new Mobius({
     typeDefs
 })
 
-const b = await a.query({
-    songs: {
-        select: {
-            name: true
-        },
-        where: {
-            composer: 'a'
-        }
-    }
-})
+// const b = await a.query({
+//     songs: {
+//         select: {
+//             name: true
+//         },
+//         where: {
+//             composer: 'a'
+//         }
+//     }
+// })
 
-b?.songs
+console.log(
+    mobiusToGraphQL('query', {
+        query: {
+            songs: {
+                select: {
+                    name: true
+                },
+                where: {
+                    composer: 'a'
+                }
+            }
+        }
+    })
+)

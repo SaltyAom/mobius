@@ -764,18 +764,19 @@ export const mobiusToGraphQL = <
         type +
         ' _ ' +
         query
-            .replace(/"": true,([ \t]+)?(\n)?/g, '')
-            .replace(/("|\\)/g, '')
+            .replace(/\\/g, '')
             // Query quote field to GraphQL
             .replace(/(.*): {/g, (a) => a.slice(1, -3) + ' {')
-            // Quote field: true to GraphQL
-            .replace(/(\w+): true(,)?/g, (a) =>
-                a.slice(0, a[a.length - 1] === ',' ? -7 : -6)
+            // // Quote field: true to GraphQL
+            .replace(/"(\w+)": true(,)?/g, (a) =>
+                a.slice(1, a[a.length - 1] === ',' ? -8 : -7)
             )
+            .replace(/"(\w+)(\((.*)\))?" {/g, (a) => a.slice(1, -3) + ' {')
             .replace(/\(\{/g, '(')
             .replace(/\}\)/g, ')')
-            // Replace primitive value query
+            // // Replace primitive value query
             .replace(/\): true/g, ')')
+            .replace(/"(\w+)":/g, (a) => a.slice(1, -2) + ':')
     )
 }
 

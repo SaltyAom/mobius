@@ -1,4 +1,4 @@
-import { Mobius } from '../src'
+import { Mobius, mobiusToGraphQL } from '../src'
 
 const typeDefs = /* GraphQL */ `
     type MultipleNHResponse {
@@ -128,6 +128,7 @@ const typeDefs = /* GraphQL */ `
             batchBy: Int
             orderBy: NhqlCommentOrder
             channel: NhqlChannel! = HIFUMIN_FIRST
+            A: String
         ): NhqlCommentResponse!
         related(channel: NhqlChannel! = HIFUMIN_FIRST): [Nhql!]!
     }
@@ -299,6 +300,17 @@ const response = mobius.query({
                     title: {
                         display: true
                     },
+                    comments: {
+                        select: {
+                            data: {
+                                id: true
+                            }
+                        },
+                        where: {
+                            A: 'A',
+                            channel: 'HIFUMIN_FIRST'
+                        }
+                    },
                     related: {
                         select: {
                             title: {
@@ -323,4 +335,4 @@ const response = mobius.query({
     }
 })
 
-const result = await response.result.then((x) => x?.nhql.by.data?.related)
+// const result = await response.then((x) => x?.nhql.by.data?.related)
