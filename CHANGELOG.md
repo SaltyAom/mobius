@@ -1,3 +1,7 @@
+# 0.1.8 - 6 Aug 2023
+Bug fix:
+- Map default data in default query fetcher
+
 # 0.1.7 - 6 Aug 2023
 Bug fix:
 - MobiusToGraphQL strip string quote

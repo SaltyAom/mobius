@@ -875,7 +875,9 @@ export class Mobius<
                         query,
                         variables: {}
                     })
-                }).then((x) => x.json()))
+                }).then((x) =>
+                    x.json().then((x) => (x as { data: unknown }).data)
+                ))
         )
     }
 
