@@ -66,7 +66,7 @@ const mobius2 = new Mobius({
 })
 
 // Call query to execute query
-const { result } = mobius.query({
+const result = await mobius.query({
     Hello: {
         where: {
             word: 'Hi'
