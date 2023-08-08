@@ -1,21 +1,21 @@
 {
   "name": "graphql-mobius",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "End-to-end type safe TypeScript GraphQL Client",
   "author": {
     "name": "saltyAom",
     "url": "https://github.com/SaltyAom",
     "email": "saltyaom@gmail.com"
   },
-  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     "bun": "./dist/index.js",
     "node": "./dist/index.js",
     "require": "./dist/index.js",
     "import": "./dist/index.js",
-    "default": "./dist/index.js"
+    "default": "./dist/index.js",
+    "types": "./dist/index.d.ts"
   },
-  "types": "./src/index.ts",
   "keywords": [
     "elysia",
     "graphql",
@@ -33,7 +33,7 @@
     "dev": "bun run --watch example/index.ts",
     "test": "bun wiptest && npm run test:types",
     "test:types": "tsc --project tsconfig.test.json",
-    "build": "rimraf dist && bun build.ts",
+    "build": "rimraf dist && bun build.ts && tsc --project tsconfig.build.json",
     "release": "npm run build && npm run test && npm publish --access public",
     "trace": "tsc --generateTrace ./trace --incremental false"
   },

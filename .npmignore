@@ -21,3 +21,7 @@ CHANGELOG.md
 tsconfig.cjs.json
 tsconfig.esm.json
 tsconfig.test.json
+tsconfig.build.json
+
+build.ts
+src

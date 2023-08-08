@@ -1,5 +1,9 @@
 # 0.1.8 - 6 Aug 2023
 Bug fix:
+- Add .d.ts file alongside dist in case ts server can't infer src/index.ts
+
+# 0.1.8 - 6 Aug 2023
+Bug fix:
 - Map default data in default query fetcher
 
 # 0.1.7 - 6 Aug 2023
