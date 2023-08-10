@@ -1,3 +1,7 @@
+# 0.1.10 - 6 Aug 2023
+Improvement:
+- Make optional query parameter optional
+
 # 0.1.8 - 6 Aug 2023
 Bug fix:
 - Add .d.ts file alongside dist in case ts server can't infer src/index.ts

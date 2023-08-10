@@ -292,8 +292,7 @@ const response = mobius.query({
     nhql: {
         by: {
             where: {
-                id: 177013,
-                channel: 'HIFUMIN_FIRST'
+                id: 177013
             },
             select: {
                 data: {
@@ -306,10 +305,7 @@ const response = mobius.query({
                                 id: true
                             }
                         },
-                        where: {
-                            A: 'A',
-                            channel: 'HIFUMIN_FIRST'
-                        }
+                        where: {}
                     },
                     related: {
                         select: {
@@ -319,14 +315,8 @@ const response = mobius.query({
                             related: {
                                 select: {
                                     id: true
-                                },
-                                where: {
-                                    channel: 'HIFUMIN_FIRST'
                                 }
                             }
-                        },
-                        where: {
-                            channel: 'HIFUMIN_FIRST'
                         }
                     }
                 }

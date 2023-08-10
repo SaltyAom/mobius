@@ -298,12 +298,18 @@ type MapArgument<
     ? MapArgument<
           Rest,
           Known,
-          Type extends `${infer _}!${infer _}`
-              ? Carry & {
-                    [name in TrimLeft<Name>]: FormatType<
-                        FirstWord<TrimLeft<Type>>
-                    >
-                }
+          Type extends `${infer _}!${infer Rest}`
+              ? Rest extends `${string}=${string}`
+                  ? Carry & {
+                        [name in TrimLeft<Name>]?: FormatType<
+                            FirstWord<TrimLeft<Type>>
+                        >
+                    }
+                  : Carry & {
+                        [name in TrimLeft<Name>]: FormatType<
+                            FirstWord<TrimLeft<Type>>
+                        >
+                    }
               : Carry & {
                     [name in TrimLeft<Name>]?: FormatType<
                         FirstWord<TrimLeft<Type>>
@@ -311,10 +317,18 @@ type MapArgument<
                 }
       >
     : T extends `${infer Name}:${infer Type}`
-    ? Type extends `${infer _}!${infer _}`
-        ? Carry & {
-              [name in TrimLeft<Name>]: FormatType<FirstWord<TrimLeft<Type>>>
-          }
+    ? Type extends `${infer _}!${infer Rest}`
+        ? Rest extends `${string}=${string}`
+            ? Carry & {
+                  [name in TrimLeft<Name>]?: FormatType<
+                      FirstWord<TrimLeft<Type>>
+                  >
+              }
+            : Carry & {
+                  [name in TrimLeft<Name>]: FormatType<
+                      FirstWord<TrimLeft<Type>>
+                  >
+              }
         : Carry & {
               [name in TrimLeft<Name>]?: FormatType<FirstWord<TrimLeft<Type>>>
           }
@@ -866,7 +880,7 @@ export class Mobius<
         return (
             this.config?.fetch ??
             ((query: string) =>
-                fetch(this.config?.url ?? '::1', {
+                fetch(this.config?.url ?? '', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
