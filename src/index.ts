@@ -558,7 +558,7 @@ export type Resolver<
                 : { Mutation: A }
             : never) &
         ({
-            [K in keyof T['Mutation']]: T['Mutation'][K] extends (
+            [K in keyof T['Subscription']]: T['Subscription'][K] extends (
                 arg: infer Args
             ) => infer Returned
                 ? (
@@ -576,9 +576,9 @@ export type Resolver<
                       info: unknown
                   ) =>
                       | MaybePromise<
-                            UndefinedToNullableFields<T['Mutation'][K]>
+                            UndefinedToNullableFields<T['Subscription'][K]>
                         >
-                      | (T['Mutation'][K] extends null ? void : never)
+                      | (T["Subscription"][K] extends null ? void : never)
         } extends infer A
             ? {} extends A
                 ? { Subscription?: {} }

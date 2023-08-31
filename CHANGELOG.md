@@ -1,3 +1,7 @@
+# 0.1.11 - 31 Aug 2023
+Improvement:
+- Duplicated subscription from Mutation
+
 # 0.1.10 - 6 Aug 2023
 Improvement:
 - Make optional query parameter optional
