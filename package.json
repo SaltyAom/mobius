@@ -33,7 +33,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "bun run --watch example/index.ts",
-    "test": "bun wiptest && npm run test:types",
+    "test": "bun test && npm run test:types",
     "test:types": "tsc --project tsconfig.test.json",
     "build": "rimraf dist && bun build.ts && tsc --project tsconfig.build.json",
     "release": "npm run build && npm run test && npm publish --access public",
