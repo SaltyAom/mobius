@@ -11,12 +11,15 @@ const typeDefs = /* GraphQL */ `
     }
 
     type Query {
-        songs(composer: String!): [Song!]!
+        songs(composer: String!): String!
     }
 `
 
-const a = new Mobius({
-    typeDefs
+const a = new Mobius<typeof typeDefs>({
+    typeDefs,
+    fetch(query) {
+        console.log(query)
+    }
 })
 
 // const b = await a.query({
@@ -31,15 +34,11 @@ const a = new Mobius({
 // })
 
 console.log(
-    mobiusToGraphQL('query', {
-        query: {
-            songs: {
-                select: {
-                    name: true
-                },
-                where: {
-                    composer: 'a'
-                }
+    a.query({
+        songs: {
+            select: true,
+            where: {
+                composer: 'a'
             }
         }
     })

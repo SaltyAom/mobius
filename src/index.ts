@@ -578,7 +578,7 @@ export type Resolver<
                       | MaybePromise<
                             UndefinedToNullableFields<T['Subscription'][K]>
                         >
-                      | (T["Subscription"][K] extends null ? void : never)
+                      | (T['Subscription'][K] extends null ? void : never)
         } extends infer A
             ? {} extends A
                 ? { Subscription?: {} }
@@ -781,16 +781,18 @@ export const mobiusToGraphQL = <
             .replace(/\\/g, '')
             // Query quote field to GraphQL
             .replace(/(.*): {/g, (a) => a.slice(1, -3) + ' {')
-            // // Quote field: true to GraphQL
+            // Quote field: true to GraphQL
             .replace(/"(\w+)": true(,)?/g, (a) =>
                 a.slice(1, a[a.length - 1] === ',' ? -8 : -7)
             )
             .replace(/"(\w+)(\((.*)\))?" {/g, (a) => a.slice(1, -3) + ' {')
             .replace(/\(\{/g, '(')
             .replace(/\}\)/g, ')')
-            // // Replace primitive value query
+            // Replace primitive value query
             .replace(/\): true/g, ')')
             .replace(/"(\w+)":/g, (a) => a.slice(1, -2) + ':')
+            // Remove query without object
+            .replace(/"(\w+)(\((.*)\))?": true/g, (a) => a.slice(1, -7))
     )
 }
 

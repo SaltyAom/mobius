@@ -1,3 +1,7 @@
+# 0.1.12 - 8 Sep 2023
+Bug fix:
+- Handle GraphQL with one line query
+
 # 0.1.11 - 31 Aug 2023
 Improvement:
 - Duplicated subscription from Mutation
