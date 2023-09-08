@@ -13,11 +13,15 @@ const typeDefs = /* GraphQL */ `
     type Query {
         songs(composer: String!): String!
     }
+
+    type Mutation {
+        addUser(email: String!): String!
+    }
 `
 
 const a = new Mobius<typeof typeDefs>({
     typeDefs,
-    fetch(query) {
+    async fetch(query) {
         console.log(query)
     }
 })
@@ -34,11 +38,11 @@ const a = new Mobius<typeof typeDefs>({
 // })
 
 console.log(
-    a.query({
-        songs: {
+    a.mutate({
+        addUser: {
             select: true,
             where: {
-                composer: 'a'
+                email: 'saltyaom@gmail.com'
             }
         }
     })
