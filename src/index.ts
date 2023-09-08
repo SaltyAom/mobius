@@ -936,7 +936,7 @@ export class Mobius<
         >
     > {
         // @ts-ignore
-        return this.fetch(mobiusToGraphQL('mutate', params))
+        return this.fetch(mobiusToGraphQL('mutation', params))
     }
 
     subscription<

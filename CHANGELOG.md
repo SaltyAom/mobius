@@ -1,3 +1,7 @@
+# 0.1.13 - 8 Sep 2023
+Bug fix:
+- Using mutation not mutate
+
 # 0.1.12 - 8 Sep 2023
 Bug fix:
 - Handle GraphQL with one line query
