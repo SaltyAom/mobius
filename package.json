@@ -27,9 +27,9 @@
   "homepage": "https://github.com/SaltyAom/mobius",
   "repository": {
     "type": "git",
-    "url": "://github.com/SaltyAom/mobius"
+    "url": "https://github.com/SaltyAom/mobius"
   },
-  "bugs": "://github.com/SaltyAom/mobius/issues",
+  "bugs": "https://github.com/SaltyAom/mobius/issues",
   "license": "MIT",
   "scripts": {
     "dev": "bun run --watch example/index.ts",
